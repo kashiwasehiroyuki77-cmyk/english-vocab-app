@@ -1,0 +1,1089 @@
+<!DOCTYPE html>
+<html lang="ja">
+<head>
+<meta charset="UTF-8">
+<meta name="viewport" content="width=device-width, initial-scale=1.0, user-scalable=no">
+<meta name="theme-color" content="#4F46E5">
+<meta name="apple-mobile-web-app-capable" content="yes">
+<meta name="apple-mobile-web-app-status-bar-style" content="black-translucent">
+<meta name="apple-mobile-web-app-title" content="英単語">
+<link rel="manifest" id="manifest-placeholder">
+<title>日常英会話 単語学習</title>
+<style>
+*{box-sizing:border-box;margin:0;padding:0;-webkit-tap-highlight-color:transparent}
+:root{
+  --primary:#4F46E5;--primary-light:#818CF8;--primary-dark:#3730A3;
+  --success:#10B981;--danger:#EF4444;--warning:#F59E0B;
+  --bg:#F8FAFC;--card:#FFFFFF;--text:#1E293B;--muted:#64748B;--border:#E2E8F0;
+}
+body{font-family:-apple-system,BlinkMacSystemFont,'Segoe UI',sans-serif;background:var(--bg);color:var(--text);min-height:100vh;overflow-x:hidden}
+/* NAV */
+#app{display:flex;flex-direction:column;min-height:100vh}
+nav{background:var(--primary);color:#fff;padding:12px 16px;display:flex;align-items:center;gap:12px;position:sticky;top:0;z-index:100;box-shadow:0 2px 8px rgba(0,0,0,.2)}
+nav h1{font-size:18px;font-weight:700;flex:1}
+#nav-back{display:none;background:none;border:none;color:#fff;font-size:22px;cursor:pointer;padding:4px 8px}
+/* BOTTOM TAB */
+#tab-bar{display:flex;background:#fff;border-top:1px solid var(--border);position:fixed;bottom:0;left:0;right:0;z-index:100;padding-bottom:env(safe-area-inset-bottom)}
+.tab-btn{flex:1;display:flex;flex-direction:column;align-items:center;padding:10px 4px 6px;border:none;background:none;font-size:10px;color:var(--muted);cursor:pointer;gap:3px;transition:color .2s}
+.tab-btn.active{color:var(--primary)}
+.tab-btn svg{width:22px;height:22px}
+/* MAIN */
+main{flex:1;padding:16px;padding-bottom:80px;max-width:600px;margin:0 auto;width:100%}
+/* CARDS */
+.card{background:var(--card);border-radius:16px;padding:20px;box-shadow:0 1px 4px rgba(0,0,0,.08);margin-bottom:16px}
+/* CATEGORY CHIPS */
+.chips{display:flex;flex-wrap:wrap;gap:8px;margin-bottom:16px}
+.chip{padding:6px 14px;border-radius:20px;border:2px solid var(--border);background:#fff;font-size:13px;cursor:pointer;transition:all .2s;font-weight:500}
+.chip.active{border-color:var(--primary);background:var(--primary);color:#fff}
+/* FLASHCARD */
+#flashcard-area{display:none}
+.fc-meta{display:flex;justify-content:space-between;align-items:center;margin-bottom:12px;font-size:13px;color:var(--muted)}
+.progress-bar{height:6px;background:var(--border);border-radius:3px;overflow:hidden;margin-bottom:16px}
+.progress-fill{height:100%;background:var(--primary);border-radius:3px;transition:width .4s}
+.flashcard{perspective:1000px;min-height:220px;cursor:pointer;margin-bottom:16px;user-select:none}
+.fc-inner{position:relative;width:100%;height:220px;transform-style:preserve-3d;transition:transform .5s cubic-bezier(.4,0,.2,1)}
+.flashcard.flipped .fc-inner{transform:rotateY(180deg)}
+.fc-face{position:absolute;inset:0;backface-visibility:hidden;border-radius:16px;display:flex;flex-direction:column;align-items:center;justify-content:center;padding:24px;text-align:center;box-shadow:0 4px 16px rgba(0,0,0,.12)}
+.fc-front{background:linear-gradient(135deg,var(--primary),var(--primary-dark));color:#fff}
+.fc-back{background:linear-gradient(135deg,var(--success),#059669);color:#fff;transform:rotateY(180deg)}
+.fc-word{font-size:32px;font-weight:700;margin-bottom:8px}
+.fc-phonetic{font-size:14px;opacity:.8}
+.fc-meaning{font-size:20px;font-weight:600;margin-bottom:6px}
+.fc-example{font-size:13px;opacity:.85;font-style:italic}
+.fc-hint{font-size:13px;opacity:.6;margin-top:8px}
+.fc-actions{display:flex;gap:12px}
+.btn{padding:12px 24px;border-radius:12px;border:none;font-size:15px;font-weight:600;cursor:pointer;transition:all .2s;flex:1;text-align:center}
+.btn-outline{background:#fff;color:var(--primary);border:2px solid var(--primary)}
+.btn-primary{background:var(--primary);color:#fff}
+.btn-success{background:var(--success);color:#fff}
+.btn-danger{background:var(--danger);color:#fff}
+.btn-sm{padding:8px 16px;font-size:13px;border-radius:8px}
+/* QUIZ */
+#quiz-area{display:none}
+.quiz-question{font-size:28px;font-weight:700;text-align:center;padding:24px;background:linear-gradient(135deg,var(--primary),var(--primary-dark));color:#fff;border-radius:16px;margin-bottom:20px}
+.quiz-phonetic{font-size:14px;opacity:.8;margin-top:4px}
+.quiz-options{display:grid;grid-template-columns:1fr 1fr;gap:12px;margin-bottom:16px}
+.quiz-opt{padding:16px 12px;border-radius:12px;border:2px solid var(--border);background:#fff;font-size:15px;font-weight:500;cursor:pointer;transition:all .2s;text-align:center;line-height:1.4}
+.quiz-opt:active{transform:scale(.97)}
+.quiz-opt.correct{border-color:var(--success);background:#D1FAE5;color:#065F46}
+.quiz-opt.wrong{border-color:var(--danger);background:#FEE2E2;color:#991B1B}
+.quiz-opt.disabled{pointer-events:none;opacity:.6}
+.quiz-stats{display:flex;gap:16px;font-size:13px;color:var(--muted);justify-content:center}
+.stat-badge{background:var(--bg);padding:6px 14px;border-radius:20px;font-weight:600}
+/* PROGRESS PAGE */
+.prog-header{display:flex;justify-content:space-between;align-items:center;margin-bottom:16px}
+.prog-header h2{font-size:18px;font-weight:700}
+.big-stat{text-align:center;padding:20px;background:linear-gradient(135deg,var(--primary),var(--primary-dark));border-radius:16px;color:#fff;margin-bottom:16px}
+.big-stat .num{font-size:48px;font-weight:700}
+.big-stat .label{font-size:14px;opacity:.8}
+.cat-progress{margin-bottom:12px}
+.cat-progress-label{display:flex;justify-content:space-between;font-size:13px;margin-bottom:4px}
+.word-grid{display:grid;grid-template-columns:repeat(auto-fill,minmax(150px,1fr));gap:8px;margin-top:12px}
+.word-badge{padding:8px 12px;background:var(--bg);border-radius:8px;font-size:13px;border-left:3px solid var(--success)}
+.word-badge.not-learned{border-left-color:var(--border)}
+/* HOME */
+.mode-card{background:var(--card);border-radius:16px;padding:20px;box-shadow:0 1px 4px rgba(0,0,0,.08);margin-bottom:16px;display:flex;align-items:center;gap:16px;cursor:pointer;transition:transform .15s,box-shadow .15s;border:2px solid transparent}
+.mode-card:active{transform:scale(.98);box-shadow:0 2px 8px rgba(0,0,0,.15)}
+.mode-icon{width:52px;height:52px;border-radius:14px;display:flex;align-items:center;justify-content:center;font-size:26px;flex-shrink:0}
+.mode-title{font-size:17px;font-weight:700;margin-bottom:2px}
+.mode-desc{font-size:13px;color:var(--muted)}
+.summary-row{display:flex;gap:12px;margin-bottom:16px}
+.summary-box{flex:1;background:var(--card);border-radius:12px;padding:14px;text-align:center;box-shadow:0 1px 4px rgba(0,0,0,.06)}
+.summary-box .val{font-size:24px;font-weight:700;color:var(--primary)}
+.summary-box .lbl{font-size:11px;color:var(--muted);margin-top:2px}
+/* RESULT */
+#result-area{display:none;text-align:center;padding:24px}
+.result-icon{font-size:64px;margin-bottom:16px}
+.result-score{font-size:48px;font-weight:700;color:var(--primary)}
+/* TOAST */
+#toast{position:fixed;top:72px;left:50%;transform:translateX(-50%) translateY(-20px);background:#1E293B;color:#fff;padding:10px 20px;border-radius:24px;font-size:14px;opacity:0;transition:all .3s;z-index:200;white-space:nowrap;pointer-events:none}
+#toast.show{opacity:1;transform:translateX(-50%) translateY(0)}
+</style>
+</head>
+<body>
+<div id="app">
+  <nav>
+    <button id="nav-back" onclick="goBack()">&#8249;</button>
+    <h1 id="nav-title">日常英会話 学習</h1>
+  </nav>
+
+  <main id="main-content">
+    <!-- HOME -->
+    <div id="page-home">
+      <div class="summary-row">
+        <div class="summary-box"><div class="val" id="home-learned">0</div><div class="lbl">覚えた単語</div></div>
+        <div class="summary-box"><div class="val" id="home-total">500</div><div class="lbl">総単語数</div></div>
+        <div class="summary-box"><div class="val" id="home-accuracy">-</div><div class="lbl">正答率</div></div>
+      </div>
+      <div class="mode-card" onclick="showPage('flashcard')">
+        <div class="mode-icon" style="background:#EEF2FF">📖</div>
+        <div><div class="mode-title">フラッシュカード</div><div class="mode-desc">単語をタップして意味を確認</div></div>
+      </div>
+      <div class="mode-card" onclick="showPage('quiz')">
+        <div class="mode-icon" style="background:#D1FAE5">🎯</div>
+        <div><div class="mode-title">4択クイズ</div><div class="mode-desc">選択肢から正解を選ぼう</div></div>
+      </div>
+      <div class="mode-card" onclick="showPage('progress')">
+        <div class="mode-icon" style="background:#FEF3C7">📊</div>
+        <div><div class="mode-title">学習進捗</div><div class="mode-desc">覚えた単語・カテゴリを確認</div></div>
+      </div>
+    </div>
+
+    <!-- FLASHCARD PAGE -->
+    <div id="page-flashcard" style="display:none">
+      <div class="chips" id="fc-chips"></div>
+      <div id="flashcard-area">
+        <div class="fc-meta">
+          <span id="fc-category-label"></span>
+          <span id="fc-counter">1 / 20</span>
+        </div>
+        <div class="progress-bar"><div class="progress-fill" id="fc-progress"></div></div>
+        <div class="flashcard" id="flashcard" onclick="flipCard()">
+          <div class="fc-inner">
+            <div class="fc-face fc-front">
+              <div class="fc-word" id="fc-word"></div>
+              <div class="fc-phonetic" id="fc-phonetic"></div>
+              <div class="fc-hint">タップして意味を見る</div>
+            </div>
+            <div class="fc-face fc-back">
+              <div class="fc-meaning" id="fc-meaning"></div>
+              <div class="fc-example" id="fc-example"></div>
+            </div>
+          </div>
+        </div>
+        <div class="fc-actions">
+          <button class="btn btn-danger" onclick="markCard(false)">もう一度</button>
+          <button class="btn btn-success" onclick="markCard(true)">覚えた！</button>
+        </div>
+      </div>
+    </div>
+
+    <!-- QUIZ PAGE -->
+    <div id="page-quiz" style="display:none">
+      <div class="chips" id="quiz-chips"></div>
+      <div id="quiz-area">
+        <div class="quiz-stats">
+          <span class="stat-badge">✅ <span id="quiz-correct">0</span></span>
+          <span class="stat-badge">❌ <span id="quiz-wrong">0</span></span>
+          <span class="stat-badge">📊 <span id="quiz-acc">-%</span></span>
+          <span class="stat-badge"><span id="quiz-num">1</span>/<span id="quiz-total">20</span></span>
+        </div>
+        <div style="height:12px"></div>
+        <div class="progress-bar"><div class="progress-fill" id="quiz-progress"></div></div>
+        <div class="quiz-question">
+          <div id="quiz-word"></div>
+          <div class="quiz-phonetic" id="quiz-phonetic"></div>
+        </div>
+        <div class="quiz-options" id="quiz-options"></div>
+        <div id="result-area">
+          <div class="result-icon">🎉</div>
+          <div class="result-score" id="result-score"></div>
+          <div style="color:var(--muted);margin:8px 0 24px">正解数</div>
+          <button class="btn btn-primary" onclick="startQuiz()">もう一度</button>
+          <div style="height:12px"></div>
+          <button class="btn btn-outline" onclick="showPage('home')" style="margin-top:0">ホームへ</button>
+        </div>
+      </div>
+    </div>
+
+    <!-- PROGRESS PAGE -->
+    <div id="page-progress" style="display:none">
+      <div class="big-stat">
+        <div class="num" id="prog-count">0</div>
+        <div class="label">単語を覚えた！</div>
+      </div>
+      <div class="card">
+        <h3 style="font-size:15px;font-weight:700;margin-bottom:12px">カテゴリ別進捗</h3>
+        <div id="cat-progress-list"></div>
+      </div>
+      <div class="card">
+        <div class="prog-header">
+          <h2>覚えた単語</h2>
+          <button class="btn btn-sm btn-outline" onclick="resetProgress()">リセット</button>
+        </div>
+        <div class="word-grid" id="learned-words"></div>
+      </div>
+    </div>
+  </main>
+
+  <div id="tab-bar">
+    <button class="tab-btn active" onclick="showPage('home')" id="tab-home">
+      <svg viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2"><path d="M3 9l9-7 9 7v11a2 2 0 01-2 2H5a2 2 0 01-2-2z"/><polyline points="9 22 9 12 15 12 15 22"/></svg>
+      ホーム
+    </button>
+    <button class="tab-btn" onclick="showPage('flashcard')" id="tab-flashcard">
+      <svg viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2"><rect x="2" y="3" width="20" height="14" rx="2"/><line x1="8" y1="21" x2="16" y2="21"/><line x1="12" y1="17" x2="12" y2="21"/></svg>
+      カード
+    </button>
+    <button class="tab-btn" onclick="showPage('quiz')" id="tab-quiz">
+      <svg viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2"><circle cx="12" cy="12" r="10"/><path d="M9.09 9a3 3 0 015.83 1c0 2-3 3-3 3"/><line x1="12" y1="17" x2="12.01" y2="17"/></svg>
+      クイズ
+    </button>
+    <button class="tab-btn" onclick="showPage('progress')" id="tab-progress">
+      <svg viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2"><line x1="18" y1="20" x2="18" y2="10"/><line x1="12" y1="20" x2="12" y2="4"/><line x1="6" y1="20" x2="6" y2="14"/></svg>
+      進捗
+    </button>
+  </div>
+</div>
+<div id="toast"></div>
+
+<script>
+// ===== VOCABULARY DATA =====
+const VOCAB = [
+  // Greetings (40)
+  {w:"Hello",p:"/həˈloʊ/",m:"こんにちは",e:"Hello! How are you?",c:"挨拶"},
+  {w:"Hi",p:"/haɪ/",m:"やあ・こんにちは",e:"Hi! Nice to meet you.",c:"挨拶"},
+  {w:"Good morning",p:"/ɡʊd ˈmɔːrnɪŋ/",m:"おはようございます",e:"Good morning! Did you sleep well?",c:"挨拶"},
+  {w:"Good afternoon",p:"/ɡʊd ˌæftərˈnuːn/",m:"こんにちは（午後）",e:"Good afternoon, everyone.",c:"挨拶"},
+  {w:"Good evening",p:"/ɡʊd ˈiːvnɪŋ/",m:"こんばんは",e:"Good evening! Welcome to our restaurant.",c:"挨拶"},
+  {w:"Good night",p:"/ɡʊd naɪt/",m:"おやすみなさい",e:"Good night! Sweet dreams.",c:"挨拶"},
+  {w:"Goodbye",p:"/ˌɡʊdˈbaɪ/",m:"さようなら",e:"Goodbye! See you next time.",c:"挨拶"},
+  {w:"See you later",p:"/siː juː ˈleɪtər/",m:"またあとで",e:"See you later, have a great day!",c:"挨拶"},
+  {w:"How are you?",p:"/haʊ ɑːr juː/",m:"お元気ですか？",e:"How are you? I'm doing well, thanks.",c:"挨拶"},
+  {w:"I'm fine",p:"/aɪm faɪn/",m:"元気です",e:"I'm fine, thank you for asking.",c:"挨拶"},
+  {w:"Nice to meet you",p:"/naɪs tə miːt juː/",m:"はじめまして",e:"Nice to meet you! I'm Hiroshi.",c:"挨拶"},
+  {w:"Welcome",p:"/ˈwelkəm/",m:"ようこそ",e:"Welcome to Japan!",c:"挨拶"},
+  {w:"Thank you",p:"/θæŋk juː/",m:"ありがとう",e:"Thank you so much for your help.",c:"挨拶"},
+  {w:"You're welcome",p:"/jɔːr ˈwelkəm/",m:"どういたしまして",e:"You're welcome! Anytime.",c:"挨拶"},
+  {w:"Please",p:"/pliːz/",m:"どうぞ・お願いします",e:"Could you help me, please?",c:"挨拶"},
+  {w:"Sorry",p:"/ˈsɒri/",m:"ごめんなさい",e:"Sorry, I didn't mean to do that.",c:"挨拶"},
+  {w:"Excuse me",p:"/ɪkˈskjuːz miː/",m:"すみません",e:"Excuse me, where is the station?",c:"挨拶"},
+  {w:"Take care",p:"/teɪk ker/",m:"気をつけて",e:"Take care! Talk to you soon.",c:"挨拶"},
+  {w:"Have a good day",p:"/hæv ə ɡʊd deɪ/",m:"良い一日を",e:"Have a good day at work!",c:"挨拶"},
+  {w:"How's it going?",p:"/haʊz ɪt ˈɡoʊɪŋ/",m:"調子はどう？",e:"Hey, how's it going? Pretty good!",c:"挨拶"},
+  {w:"What's up?",p:"/wɒts ʌp/",m:"どうした？元気？",e:"What's up? Haven't seen you in a while!",c:"挨拶"},
+  {w:"Long time no see",p:"/lɒŋ taɪm noʊ siː/",m:"久しぶり",e:"Long time no see! How have you been?",c:"挨拶"},
+  {w:"Congratulations",p:"/kənˌɡrætʃuˈleɪʃənz/",m:"おめでとう",e:"Congratulations on your graduation!",c:"挨拶"},
+  {w:"Happy birthday",p:"/ˈhæpi ˈbɜːrθdeɪ/",m:"お誕生日おめでとう",e:"Happy birthday! Here's a gift for you.",c:"挨拶"},
+  {w:"Good luck",p:"/ɡʊd lʌk/",m:"頑張って・幸運を",e:"Good luck on your exam tomorrow!",c:"挨拶"},
+  {w:"My pleasure",p:"/maɪ ˈpleʒər/",m:"喜んで・こちらこそ",e:"My pleasure! I enjoyed helping you.",c:"挨拶"},
+  {w:"Cheers",p:"/tʃɪrz/",m:"乾杯・ありがとう",e:"Cheers! Here's to a great evening.",c:"挨拶"},
+  {w:"See you tomorrow",p:"/siː juː təˈmɒroʊ/",m:"また明日",e:"See you tomorrow at the office.",c:"挨拶"},
+  {w:"Bye",p:"/baɪ/",m:"バイバイ",e:"Bye! Take care of yourself.",c:"挨拶"},
+  {w:"Have fun",p:"/hæv fʌn/",m:"楽しんで",e:"Have fun at the party tonight!",c:"挨拶"},
+  {w:"Get well soon",p:"/ɡet wel suːn/",m:"早く良くなってね",e:"Get well soon! We miss you at work.",c:"挨拶"},
+  {w:"Pardon me",p:"/ˈpɑːrdən miː/",m:"失礼しました",e:"Pardon me, could you repeat that?",c:"挨拶"},
+  {w:"No problem",p:"/noʊ ˈprɒbləm/",m:"問題ありません",e:"No problem at all! I'm happy to help.",c:"挨拶"},
+  {w:"Of course",p:"/əv kɔːrs/",m:"もちろん",e:"Of course! I'll be there at 5.",c:"挨拶"},
+  {w:"Absolutely",p:"/ˌæbsəˈluːtli/",m:"絶対に・もちろん",e:"Absolutely! I agree with you.",c:"挨拶"},
+  {w:"Sure",p:"/ʃʊr/",m:"もちろん・いいよ",e:"Sure, I can help you with that.",c:"挨拶"},
+  {w:"Alright",p:"/ɔːlˈraɪt/",m:"わかった・大丈夫",e:"Alright, let's get started!",c:"挨拶"},
+  {w:"Indeed",p:"/ɪnˈdiːd/",m:"確かに・その通り",e:"Indeed, that's a great point.",c:"挨拶"},
+  {w:"Certainly",p:"/ˈsɜːrtnli/",m:"確かに・かしこまりました",e:"Certainly! I'll do it right away.",c:"挨拶"},
+  {w:"Wonderful",p:"/ˈwʌndərfəl/",m:"素晴らしい",e:"What a wonderful day for a picnic!",c:"挨拶"},
+
+  // Shopping (40)
+  {w:"How much?",p:"/haʊ mʌtʃ/",m:"いくらですか？",e:"How much does this cost?",c:"買い物"},
+  {w:"Receipt",p:"/rɪˈsiːt/",m:"レシート・領収書",e:"Could I have a receipt, please?",c:"買い物"},
+  {w:"Discount",p:"/ˈdɪskaʊnt/",m:"割引",e:"Is there a discount for students?",c:"買い物"},
+  {w:"Sale",p:"/seɪl/",m:"セール・販売",e:"Everything is on sale this weekend!",c:"買い物"},
+  {w:"Price",p:"/praɪs/",m:"値段・価格",e:"What's the price of this jacket?",c:"買い物"},
+  {w:"Cashier",p:"/kæˈʃɪr/",m:"レジ係",e:"Please pay at the cashier.",c:"買い物"},
+  {w:"Credit card",p:"/ˈkredɪt kɑːrd/",m:"クレジットカード",e:"Do you accept credit cards?",c:"買い物"},
+  {w:"Cash",p:"/kæʃ/",m:"現金",e:"I'd like to pay in cash.",c:"買い物"},
+  {w:"Change",p:"/tʃeɪndʒ/",m:"おつり・変わる",e:"Here's your change. Thank you!",c:"買い物"},
+  {w:"Size",p:"/saɪz/",m:"サイズ",e:"Do you have this in a larger size?",c:"買い物"},
+  {w:"Color",p:"/ˈkʌlər/",m:"色",e:"Do you have this in blue?",c:"買い物"},
+  {w:"Try on",p:"/traɪ ɒn/",m:"試着する",e:"May I try this on?",c:"買い物"},
+  {w:"Fitting room",p:"/ˈfɪtɪŋ ruːm/",m:"試着室",e:"The fitting rooms are in the back.",c:"買い物"},
+  {w:"Refund",p:"/ˈriːfʌnd/",m:"返金",e:"I'd like a refund for this item.",c:"買い物"},
+  {w:"Exchange",p:"/ɪksˈtʃeɪndʒ/",m:"交換する",e:"Can I exchange this for a different size?",c:"買い物"},
+  {w:"Shopping bag",p:"/ˈʃɒpɪŋ bæɡ/",m:"買い物袋",e:"Would you like a shopping bag?",c:"買い物"},
+  {w:"Sold out",p:"/soʊld aʊt/",m:"売り切れ",e:"Sorry, that item is sold out.",c:"買い物"},
+  {w:"In stock",p:"/ɪn stɒk/",m:"在庫あり",e:"Yes, we have that in stock.",c:"買い物"},
+  {w:"Bargain",p:"/ˈbɑːrɡən/",m:"お買い得品",e:"What a bargain! I'll take it.",c:"買い物"},
+  {w:"Expensive",p:"/ɪkˈspensɪv/",m:"高価な",e:"This watch is quite expensive.",c:"買い物"},
+  {w:"Cheap",p:"/tʃiːp/",m:"安い",e:"These shoes are really cheap!",c:"買い物"},
+  {w:"Affordable",p:"/əˈfɔːrdəbəl/",m:"手頃な価格",e:"This restaurant is very affordable.",c:"買い物"},
+  {w:"Supermarket",p:"/ˈsuːpərˌmɑːrkɪt/",m:"スーパーマーケット",e:"I need to go to the supermarket.",c:"買い物"},
+  {w:"Department store",p:"/dɪˈpɑːrtmənt stɔːr/",m:"デパート",e:"There's a sale at the department store.",c:"買い物"},
+  {w:"Checkout",p:"/ˈtʃekaʊt/",m:"精算・チェックアウト",e:"We can check out at counter three.",c:"買い物"},
+  {w:"Cart",p:"/kɑːrt/",m:"カート",e:"I need a shopping cart.",c:"買い物"},
+  {w:"Delivery",p:"/dɪˈlɪvəri/",m:"配達",e:"Do you offer home delivery?",c:"買い物"},
+  {w:"Online shopping",p:"/ˈɒnlaɪn ˈʃɒpɪŋ/",m:"ネットショッピング",e:"I love online shopping for convenience.",c:"買い物"},
+  {w:"Warranty",p:"/ˈwɒrənti/",m:"保証",e:"This product comes with a 1-year warranty.",c:"買い物"},
+  {w:"Label",p:"/ˈleɪbəl/",m:"ラベル・タグ",e:"Check the label for care instructions.",c:"買い物"},
+  {w:"Brand",p:"/brænd/",m:"ブランド",e:"What brand is this?",c:"買い物"},
+  {w:"Quality",p:"/ˈkwɒlɪti/",m:"品質",e:"The quality of this product is excellent.",c:"買い物"},
+  {w:"Aisle",p:"/aɪl/",m:"通路・売り場",e:"Bread is in aisle 3.",c:"買い物"},
+  {w:"Coupon",p:"/ˈkuːpɒn/",m:"クーポン",e:"Do you accept this coupon?",c:"買い物"},
+  {w:"Tax",p:"/tæks/",m:"税金・消費税",e:"Is tax included in the price?",c:"買い物"},
+  {w:"Total",p:"/ˈtoʊtəl/",m:"合計",e:"Your total comes to $35.",c:"買い物"},
+  {w:"Gift wrap",p:"/ɡɪft ræp/",m:"ギフト包装",e:"Could you gift wrap this, please?",c:"買い物"},
+  {w:"Member",p:"/ˈmembər/",m:"会員",e:"Are you a member of our loyalty program?",c:"買い物"},
+  {w:"Point",p:"/pɔɪnt/",m:"ポイント",e:"You earned 50 points with this purchase.",c:"買い物"},
+  {w:"Grocery",p:"/ˈɡroʊsəri/",m:"食料品",e:"I need to buy groceries today.",c:"買い物"},
+
+  // Restaurant / Food (40)
+  {w:"Menu",p:"/ˈmenjuː/",m:"メニュー",e:"May I see the menu, please?",c:"食事"},
+  {w:"Order",p:"/ˈɔːrdər/",m:"注文する",e:"Are you ready to order?",c:"食事"},
+  {w:"Reservation",p:"/ˌrezərˈveɪʃən/",m:"予約",e:"I have a reservation for two.",c:"食事"},
+  {w:"Table",p:"/ˈteɪbəl/",m:"テーブル・席",e:"Do you have a table for four?",c:"食事"},
+  {w:"Waiter",p:"/ˈweɪtər/",m:"ウェイター",e:"Excuse me, waiter! The bill, please.",c:"食事"},
+  {w:"Bill",p:"/bɪl/",m:"請求書・伝票",e:"Can we get the bill, please?",c:"食事"},
+  {w:"Tip",p:"/tɪp/",m:"チップ",e:"Shall we leave a tip?",c:"食事"},
+  {w:"Appetizer",p:"/ˈæpɪtaɪzər/",m:"前菜・アペタイザー",e:"I'll have the soup as an appetizer.",c:"食事"},
+  {w:"Main course",p:"/meɪn kɔːrs/",m:"メインコース",e:"What's today's main course?",c:"食事"},
+  {w:"Dessert",p:"/dɪˈzɜːrt/",m:"デザート",e:"Would you like to see the dessert menu?",c:"食事"},
+  {w:"Beverage",p:"/ˈbevərɪdʒ/",m:"飲み物",e:"What beverages do you have?",c:"食事"},
+  {w:"Vegetarian",p:"/ˌvedʒəˈteriən/",m:"ベジタリアン",e:"Do you have vegetarian options?",c:"食事"},
+  {w:"Allergic",p:"/əˈlɜːrdʒɪk/",m:"アレルギーがある",e:"I'm allergic to peanuts.",c:"食事"},
+  {w:"Delicious",p:"/dɪˈlɪʃəs/",m:"美味しい",e:"This pasta is absolutely delicious!",c:"食事"},
+  {w:"Spicy",p:"/ˈspaɪsi/",m:"辛い",e:"Is this dish very spicy?",c:"食事"},
+  {w:"Fresh",p:"/freʃ/",m:"新鮮な",e:"The fish is very fresh today.",c:"食事"},
+  {w:"Well-done",p:"/wel dʌn/",m:"よく焼いた（ステーキ）",e:"I'd like my steak well-done, please.",c:"食事"},
+  {w:"Medium",p:"/ˈmiːdiəm/",m:"ミディアム（ステーキ）",e:"Medium, please.",c:"食事"},
+  {w:"Rare",p:"/rer/",m:"レア（ステーキ）",e:"I'll have my steak rare.",c:"食事"},
+  {w:"To go",p:"/tə ɡoʊ/",m:"テイクアウト",e:"Is this for here or to go?",c:"食事"},
+  {w:"Takeout",p:"/ˈteɪkaʊt/",m:"持ち帰り",e:"I'd like to place a takeout order.",c:"食事"},
+  {w:"Refill",p:"/ˈriːfɪl/",m:"おかわり",e:"Could I have a refill, please?",c:"食事"},
+  {w:"Split the bill",p:"/splɪt ðə bɪl/",m:"割り勘",e:"Let's split the bill.",c:"食事"},
+  {w:"Recommend",p:"/ˌrekəˈmend/",m:"おすすめする",e:"What do you recommend?",c:"食事"},
+  {w:"Portion",p:"/ˈpɔːrʃən/",m:"量・一人前",e:"The portion size is very generous.",c:"食事"},
+  {w:"Ingredients",p:"/ɪnˈɡriːdiənts/",m:"材料・成分",e:"What are the main ingredients?",c:"食事"},
+  {w:"Gluten-free",p:"/ˈɡluːtən friː/",m:"グルテンフリー",e:"Do you have gluten-free options?",c:"食事"},
+  {w:"Sauce",p:"/sɔːs/",m:"ソース",e:"What sauce comes with this dish?",c:"食事"},
+  {w:"Side dish",p:"/saɪd dɪʃ/",m:"副菜・サイドメニュー",e:"What side dishes are available?",c:"食事"},
+  {w:"Buffet",p:"/bʌˈfeɪ/",m:"バイキング・ブッフェ",e:"This restaurant offers a lunch buffet.",c:"食事"},
+  {w:"Chef",p:"/ʃef/",m:"シェフ",e:"The chef's special today is salmon.",c:"食事"},
+  {w:"Café",p:"/kæˈfeɪ/",m:"カフェ",e:"Let's meet at the café on Main Street.",c:"食事"},
+  {w:"Snack",p:"/snæk/",m:"軽食・スナック",e:"I'll just have a quick snack.",c:"食事"},
+  {w:"Thirsty",p:"/ˈθɜːrsti/",m:"のどが渇いた",e:"I'm really thirsty. Can I have some water?",c:"食事"},
+  {w:"Hungry",p:"/ˈhʌŋɡri/",m:"お腹が空いた",e:"I'm so hungry! Let's eat.",c:"食事"},
+  {w:"Full",p:"/fʊl/",m:"お腹がいっぱい",e:"I'm full. That was a great meal!",c:"食事"},
+  {w:"Taste",p:"/teɪst/",m:"味・味わう",e:"Can I taste the soup first?",c:"食事"},
+  {w:"Sweet",p:"/swiːt/",m:"甘い",e:"This cake is too sweet for me.",c:"食事"},
+  {w:"Bitter",p:"/ˈbɪtər/",m:"苦い",e:"This coffee is a bit bitter.",c:"食事"},
+  {w:"Sour",p:"/ˈsaʊər/",m:"酸っぱい",e:"The lemon is very sour.",c:"食事"},
+
+  // Transportation (40)
+  {w:"Train",p:"/treɪn/",m:"電車",e:"The next train leaves at 3 PM.",c:"交通"},
+  {w:"Bus",p:"/bʌs/",m:"バス",e:"Which bus goes to downtown?",c:"交通"},
+  {w:"Taxi",p:"/ˈtæksi/",m:"タクシー",e:"Can you call a taxi for me?",c:"交通"},
+  {w:"Airport",p:"/ˈerpɔːrt/",m:"空港",e:"How far is the airport from here?",c:"交通"},
+  {w:"Ticket",p:"/ˈtɪkɪt/",m:"チケット・乗車券",e:"I need to buy a train ticket.",c:"交通"},
+  {w:"Platform",p:"/ˈplætfɔːrm/",m:"ホーム・プラットフォーム",e:"Which platform does the train leave from?",c:"交通"},
+  {w:"Departure",p:"/dɪˈpɑːrtʃər/",m:"出発",e:"The departure time is 9:30 AM.",c:"交通"},
+  {w:"Arrival",p:"/əˈraɪvəl/",m:"到着",e:"What is the expected arrival time?",c:"交通"},
+  {w:"Transfer",p:"/ˈtrænsfɜːr/",m:"乗り換え",e:"Do I need to transfer anywhere?",c:"交通"},
+  {w:"Direct",p:"/dɪˈrekt/",m:"直行",e:"Is there a direct train to the city?",c:"交通"},
+  {w:"Delay",p:"/dɪˈleɪ/",m:"遅延・遅れ",e:"The flight is delayed by 30 minutes.",c:"交通"},
+  {w:"Cancel",p:"/ˈkænsəl/",m:"キャンセルする",e:"My flight was cancelled due to the storm.",c:"交通"},
+  {w:"Boarding pass",p:"/ˈbɔːrdɪŋ pæs/",m:"搭乗券",e:"Please have your boarding pass ready.",c:"交通"},
+  {w:"Luggage",p:"/ˈlʌɡɪdʒ/",m:"荷物",e:"My luggage is too heavy.",c:"交通"},
+  {w:"Check in",p:"/tʃek ɪn/",m:"チェックイン",e:"I need to check in for my flight.",c:"交通"},
+  {w:"Customs",p:"/ˈkʌstəmz/",m:"税関",e:"You need to go through customs.",c:"交通"},
+  {w:"Passport",p:"/ˈpæspɔːrt/",m:"パスポート",e:"May I see your passport?",c:"交通"},
+  {w:"Subway",p:"/ˈsʌbweɪ/",m:"地下鉄",e:"Take the subway to Times Square.",c:"交通"},
+  {w:"Bicycle",p:"/ˈbaɪsɪkəl/",m:"自転車",e:"Can I rent a bicycle nearby?",c:"交通"},
+  {w:"Walk",p:"/wɔːk/",m:"歩く・歩いて行く",e:"It's only a 10-minute walk.",c:"交通"},
+  {w:"Directions",p:"/dɪˈrekʃənz/",m:"道順・案内",e:"Could you give me directions to the hotel?",c:"交通"},
+  {w:"Map",p:"/mæp/",m:"地図",e:"Do you have a map of the city?",c:"交通"},
+  {w:"Turn left",p:"/tɜːrn left/",m:"左に曲がる",e:"Turn left at the traffic light.",c:"交通"},
+  {w:"Turn right",p:"/tɜːrn raɪt/",m:"右に曲がる",e:"Turn right at the next corner.",c:"交通"},
+  {w:"Straight ahead",p:"/streɪt əˈhed/",m:"真っ直ぐ",e:"Go straight ahead for two blocks.",c:"交通"},
+  {w:"Near",p:"/nɪr/",m:"近い",e:"Is the station near here?",c:"交通"},
+  {w:"Far",p:"/fɑːr/",m:"遠い",e:"The museum is not too far from here.",c:"交通"},
+  {w:"Rush hour",p:"/rʌʃ aʊər/",m:"ラッシュアワー",e:"Avoid driving during rush hour.",c:"交通"},
+  {w:"Traffic jam",p:"/ˈtræfɪk dʒæm/",m:"渋滞",e:"We're stuck in a traffic jam.",c:"交通"},
+  {w:"Parking",p:"/ˈpɑːrkɪŋ/",m:"駐車場・駐車",e:"Is there parking available nearby?",c:"交通"},
+  {w:"Gas station",p:"/ɡæs ˈsteɪʃən/",m:"ガソリンスタンド",e:"I need to stop at a gas station.",c:"交通"},
+  {w:"Rent a car",p:"/rent ə kɑːr/",m:"レンタカー",e:"I'd like to rent a car for a week.",c:"交通"},
+  {w:"Driver's license",p:"/ˈdraɪvərz ˈlaɪsəns/",m:"運転免許証",e:"Do you have an international driver's license?",c:"交通"},
+  {w:"Seatbelt",p:"/ˈsiːtbelt/",m:"シートベルト",e:"Please fasten your seatbelt.",c:"交通"},
+  {w:"Exit",p:"/ˈeksɪt/",m:"出口",e:"The emergency exit is at the back.",c:"交通"},
+  {w:"Entrance",p:"/ˈentrəns/",m:"入口",e:"The entrance to the subway is on the left.",c:"交通"},
+  {w:"Schedule",p:"/ˈskedʒuːl/",m:"時刻表・スケジュール",e:"Can I see the bus schedule?",c:"交通"},
+  {w:"One-way",p:"/wʌn weɪ/",m:"片道",e:"I'd like a one-way ticket to Paris.",c:"交通"},
+  {w:"Round trip",p:"/raʊnd trɪp/",m:"往復",e:"A round-trip ticket costs $250.",c:"交通"},
+  {w:"Ferry",p:"/ˈferi/",m:"フェリー",e:"We can take the ferry to the island.",c:"交通"},
+
+  // Hotel / Accommodation (30)
+  {w:"Hotel",p:"/hoʊˈtel/",m:"ホテル",e:"I'd like to book a hotel room.",c:"宿泊"},
+  {w:"Check out",p:"/tʃek aʊt/",m:"チェックアウト",e:"What time is checkout?",c:"宿泊"},
+  {w:"Single room",p:"/ˈsɪŋɡəl ruːm/",m:"シングルルーム",e:"I'd like a single room for two nights.",c:"宿泊"},
+  {w:"Double room",p:"/ˈdʌbəl ruːm/",m:"ダブルルーム",e:"We need a double room with a view.",c:"宿泊"},
+  {w:"Reservation",p:"/ˌrezərˈveɪʃən/",m:"予約",e:"I have a reservation under Tanaka.",c:"宿泊"},
+  {w:"Front desk",p:"/frʌnt desk/",m:"フロント",e:"Please contact the front desk.",c:"宿泊"},
+  {w:"Housekeeping",p:"/ˈhaʊskiːpɪŋ/",m:"客室清掃",e:"Please send housekeeping to my room.",c:"宿泊"},
+  {w:"Room service",p:"/ruːm ˈsɜːrvɪs/",m:"ルームサービス",e:"I'd like to order room service.",c:"宿泊"},
+  {w:"Wake-up call",p:"/ˈweɪk ʌp kɔːl/",m:"モーニングコール",e:"Can I have a wake-up call at 7 AM?",c:"宿泊"},
+  {w:"Amenities",p:"/əˈmenɪtiz/",m:"アメニティ・設備",e:"What amenities does the room include?",c:"宿泊"},
+  {w:"Wi-Fi",p:"/ˈwaɪfaɪ/",m:"Wi-Fi",e:"What's the Wi-Fi password?",c:"宿泊"},
+  {w:"Pool",p:"/puːl/",m:"プール",e:"Is there a swimming pool at the hotel?",c:"宿泊"},
+  {w:"Gym",p:"/dʒɪm/",m:"ジム",e:"Does the hotel have a gym?",c:"宿泊"},
+  {w:"Minibar",p:"/ˈmɪnibɑːr/",m:"ミニバー",e:"The minibar is included in your stay.",c:"宿泊"},
+  {w:"Towel",p:"/ˈtaʊəl/",m:"タオル",e:"Could I have extra towels, please?",c:"宿泊"},
+  {w:"Pillow",p:"/ˈpɪloʊ/",m:"枕",e:"Could I have an extra pillow?",c:"宿泊"},
+  {w:"Air conditioning",p:"/er kənˈdɪʃənɪŋ/",m:"エアコン",e:"The air conditioning isn't working.",c:"宿泊"},
+  {w:"Laundry",p:"/ˈlɔːndri/",m:"洗濯・ランドリー",e:"Where is the laundry service?",c:"宿泊"},
+  {w:"Safe",p:"/seɪf/",m:"金庫",e:"Is there a safe in the room?",c:"宿泊"},
+  {w:"Balcony",p:"/ˈbælkəni/",m:"バルコニー",e:"Our room has a beautiful balcony.",c:"宿泊"},
+  {w:"Lobby",p:"/ˈlɒbi/",m:"ロビー",e:"Let's meet in the lobby at noon.",c:"宿泊"},
+  {w:"Concierge",p:"/ˌkɒnsiˈerʒ/",m:"コンシェルジュ",e:"The concierge can help with tours.",c:"宿泊"},
+  {w:"Noise",p:"/nɔɪz/",m:"騒音",e:"There's too much noise from the street.",c:"宿泊"},
+  {w:"Complain",p:"/kəmˈpleɪn/",m:"苦情を言う",e:"I need to complain about the noise.",c:"宿泊"},
+  {w:"Upgrade",p:"/ˈʌpɡreɪd/",m:"アップグレード",e:"Is an upgrade available?",c:"宿泊"},
+  {w:"Vacancy",p:"/ˈveɪkənsi/",m:"空室",e:"Do you have any vacancies tonight?",c:"宿泊"},
+  {w:"Full",p:"/fʊl/",m:"満室",e:"Sorry, we're fully booked tonight.",c:"宿泊"},
+  {w:"Key card",p:"/kiː kɑːrd/",m:"カードキー",e:"Here is your key card for room 205.",c:"宿泊"},
+  {w:"Floor",p:"/flɔːr/",m:"階",e:"Your room is on the fifth floor.",c:"宿泊"},
+  {w:"Elevator",p:"/ˈelɪveɪtər/",m:"エレベーター",e:"Take the elevator to the third floor.",c:"宿泊"},
+
+  // Health / Medical (30)
+  {w:"Doctor",p:"/ˈdɒktər/",m:"医師",e:"I need to see a doctor.",c:"健康"},
+  {w:"Hospital",p:"/ˈhɒspɪtəl/",m:"病院",e:"Please take me to the hospital.",c:"健康"},
+  {w:"Medicine",p:"/ˈmedɪsɪn/",m:"薬・医学",e:"Take this medicine twice a day.",c:"健康"},
+  {w:"Prescription",p:"/prɪˈskrɪpʃən/",m:"処方箋",e:"I need to fill this prescription.",c:"健康"},
+  {w:"Symptom",p:"/ˈsɪmptəm/",m:"症状",e:"What are your symptoms?",c:"健康"},
+  {w:"Fever",p:"/ˈfiːvər/",m:"熱",e:"I have a high fever.",c:"健康"},
+  {w:"Headache",p:"/ˈhedeɪk/",m:"頭痛",e:"I've had a headache all day.",c:"健康"},
+  {w:"Stomachache",p:"/ˈstʌməkeɪk/",m:"腹痛",e:"I have a bad stomachache.",c:"健康"},
+  {w:"Cough",p:"/kɒf/",m:"咳",e:"This cough won't go away.",c:"健康"},
+  {w:"Cold",p:"/koʊld/",m:"風邪",e:"I think I'm coming down with a cold.",c:"健康"},
+  {w:"Allergy",p:"/ˈælərdʒi/",m:"アレルギー",e:"I have a peanut allergy.",c:"健康"},
+  {w:"Insurance",p:"/ɪnˈʃʊərəns/",m:"保険",e:"Do you take my insurance?",c:"健康"},
+  {w:"Emergency",p:"/ɪˈmɜːrdʒənsi/",m:"緊急事態",e:"This is an emergency! Call 911!",c:"健康"},
+  {w:"Pain",p:"/peɪn/",m:"痛み",e:"I'm in a lot of pain.",c:"健康"},
+  {w:"Tired",p:"/ˈtaɪərd/",m:"疲れた",e:"I'm feeling really tired today.",c:"健康"},
+  {w:"Rest",p:"/rest/",m:"休む・休息",e:"You should get plenty of rest.",c:"健康"},
+  {w:"Surgery",p:"/ˈsɜːrdʒəri/",m:"手術",e:"The surgery was successful.",c:"健康"},
+  {w:"Injury",p:"/ˈɪndʒəri/",m:"けが",e:"He suffered a knee injury.",c:"健康"},
+  {w:"Dizzy",p:"/ˈdɪzi/",m:"めまいがする",e:"I feel dizzy when I stand up.",c:"健康"},
+  {w:"Nausea",p:"/ˈnɔːziə/",m:"吐き気",e:"I'm experiencing nausea.",c:"健康"},
+  {w:"Blood pressure",p:"/blʌd ˈpreʃər/",m:"血圧",e:"My blood pressure is high.",c:"健康"},
+  {w:"Pharmacy",p:"/ˈfɑːrməsi/",m:"薬局",e:"Is there a pharmacy nearby?",c:"健康"},
+  {w:"Bandage",p:"/ˈbændɪdʒ/",m:"包帯",e:"I need a bandage for my cut.",c:"健康"},
+  {w:"Appointment",p:"/əˈpɔɪntmənt/",m:"予約・診察",e:"I'd like to make an appointment.",c:"健康"},
+  {w:"Healthy",p:"/ˈhelθi/",m:"健康な",e:"Eating well keeps you healthy.",c:"健康"},
+  {w:"Exercise",p:"/ˈeksərsaɪz/",m:"運動・エクササイズ",e:"Regular exercise is important.",c:"健康"},
+  {w:"Diet",p:"/ˈdaɪət/",m:"食事制限・ダイエット",e:"I'm on a low-carb diet.",c:"健康"},
+  {w:"Sleep",p:"/sliːp/",m:"眠る・睡眠",e:"I need at least 8 hours of sleep.",c:"健康"},
+  {w:"Stress",p:"/stres/",m:"ストレス",e:"Work has been very stressful lately.",c:"健康"},
+  {w:"Recover",p:"/rɪˈkʌvər/",m:"回復する",e:"It takes time to recover from illness.",c:"健康"},
+
+  // Work / Office (40)
+  {w:"Meeting",p:"/ˈmiːtɪŋ/",m:"会議・ミーティング",e:"We have a meeting at 2 PM.",c:"仕事"},
+  {w:"Deadline",p:"/ˈdedlaɪn/",m:"締め切り",e:"The deadline is this Friday.",c:"仕事"},
+  {w:"Project",p:"/ˈprɒdʒekt/",m:"プロジェクト",e:"How's the new project going?",c:"仕事"},
+  {w:"Colleague",p:"/ˈkɒliːɡ/",m:"同僚",e:"My colleague helped me with the report.",c:"仕事"},
+  {w:"Boss",p:"/bɒs/",m:"上司・ボス",e:"My boss is very supportive.",c:"仕事"},
+  {w:"Email",p:"/ˈiːmeɪl/",m:"メール",e:"Did you receive my email?",c:"仕事"},
+  {w:"Report",p:"/rɪˈpɔːrt/",m:"レポート・報告書",e:"I need to submit the report tomorrow.",c:"仕事"},
+  {w:"Presentation",p:"/ˌprezənˈteɪʃən/",m:"プレゼンテーション",e:"I'm preparing a presentation for the board.",c:"仕事"},
+  {w:"Schedule",p:"/ˈskedʒuːl/",m:"スケジュール",e:"Let me check my schedule.",c:"仕事"},
+  {w:"Budget",p:"/ˈbʌdʒɪt/",m:"予算",e:"We need to stay within budget.",c:"仕事"},
+  {w:"Overtime",p:"/ˈoʊvərtaɪm/",m:"残業",e:"I've been working a lot of overtime.",c:"仕事"},
+  {w:"Promotion",p:"/prəˈmoʊʃən/",m:"昇進",e:"She got a promotion last month.",c:"仕事"},
+  {w:"Salary",p:"/ˈsæləri/",m:"給料",e:"What's the starting salary?",c:"仕事"},
+  {w:"Interview",p:"/ˈɪntərvjuː/",m:"面接・インタビュー",e:"I have a job interview tomorrow.",c:"仕事"},
+  {w:"Resume",p:"/ˈrezjuːmeɪ/",m:"履歴書",e:"Please send me your resume.",c:"仕事"},
+  {w:"Hire",p:"/haɪər/",m:"採用する・雇う",e:"We're looking to hire a new engineer.",c:"仕事"},
+  {w:"Retire",p:"/rɪˈtaɪər/",m:"退職する",e:"He plans to retire at 65.",c:"仕事"},
+  {w:"Quit",p:"/kwɪt/",m:"辞める",e:"She decided to quit her job.",c:"仕事"},
+  {w:"Remote work",p:"/rɪˈmoʊt wɜːrk/",m:"在宅勤務",e:"I work remote three days a week.",c:"仕事"},
+  {w:"Conference",p:"/ˈkɒnfərəns/",m:"会議・カンファレンス",e:"The annual conference is next month.",c:"仕事"},
+  {w:"Client",p:"/ˈklaɪənt/",m:"顧客・クライアント",e:"We need to satisfy the client.",c:"仕事"},
+  {w:"Contract",p:"/ˈkɒntrækt/",m:"契約",e:"Please sign the contract.",c:"仕事"},
+  {w:"Negotiate",p:"/nɪˈɡoʊʃieɪt/",m:"交渉する",e:"We need to negotiate the price.",c:"仕事"},
+  {w:"Feedback",p:"/ˈfiːdbæk/",m:"フィードバック",e:"Can I have some feedback on my work?",c:"仕事"},
+  {w:"Teamwork",p:"/ˈtiːmwɜːrk/",m:"チームワーク",e:"Good teamwork is essential.",c:"仕事"},
+  {w:"Goal",p:"/ɡoʊl/",m:"目標",e:"What are your goals for this quarter?",c:"仕事"},
+  {w:"Strategy",p:"/ˈstrætədʒi/",m:"戦略",e:"We need a new marketing strategy.",c:"仕事"},
+  {w:"Efficient",p:"/ɪˈfɪʃənt/",m:"効率的な",e:"We need to be more efficient.",c:"仕事"},
+  {w:"Productive",p:"/prəˈdʌktɪv/",m:"生産的な",e:"I wasn't very productive today.",c:"仕事"},
+  {w:"Leadership",p:"/ˈliːdərʃɪp/",m:"リーダーシップ",e:"Strong leadership is key to success.",c:"仕事"},
+  {w:"Collaboration",p:"/kəˌlæbəˈreɪʃən/",m:"共同作業",e:"This project requires close collaboration.",c:"仕事"},
+  {w:"Innovation",p:"/ˌɪnəˈveɪʃən/",m:"革新・イノベーション",e:"Innovation drives our company forward.",c:"仕事"},
+  {w:"Experience",p:"/ɪkˈspɪəriəns/",m:"経験",e:"How much experience do you have?",c:"仕事"},
+  {w:"Skill",p:"/skɪl/",m:"スキル・技術",e:"Communication is an important skill.",c:"仕事"},
+  {w:"Training",p:"/ˈtreɪnɪŋ/",m:"研修・トレーニング",e:"New employees need training.",c:"仕事"},
+  {w:"Task",p:"/tæsk/",m:"仕事・課題",e:"What tasks do I need to complete today?",c:"仕事"},
+  {w:"Priority",p:"/praɪˈɒrɪti/",m:"優先事項",e:"What's the top priority right now?",c:"仕事"},
+  {w:"Workload",p:"/ˈwɜːrkloʊd/",m:"業務量",e:"My workload has increased this month.",c:"仕事"},
+  {w:"Permission",p:"/pərˈmɪʃən/",m:"許可",e:"I need permission to access that file.",c:"仕事"},
+  {w:"Approve",p:"/əˈpruːv/",m:"承認する",e:"The manager needs to approve this.",c:"仕事"},
+
+  // Daily Life (40)
+  {w:"Weather",p:"/ˈweðər/",m:"天気",e:"What's the weather like today?",c:"日常生活"},
+  {w:"Morning",p:"/ˈmɔːrnɪŋ/",m:"朝・午前",e:"I usually run in the morning.",c:"日常生活"},
+  {w:"Evening",p:"/ˈiːvnɪŋ/",m:"夕方・夜",e:"We had dinner in the evening.",c:"日常生活"},
+  {w:"Weekend",p:"/ˈwiːkend/",m:"週末",e:"Do you have any plans for the weekend?",c:"日常生活"},
+  {w:"Hobby",p:"/ˈhɒbi/",m:"趣味",e:"What are your hobbies?",c:"日常生活"},
+  {w:"Reading",p:"/ˈriːdɪŋ/",m:"読書",e:"Reading is one of my favorite hobbies.",c:"日常生活"},
+  {w:"Cooking",p:"/ˈkʊkɪŋ/",m:"料理",e:"I enjoy cooking Japanese food.",c:"日常生活"},
+  {w:"Travel",p:"/ˈtrævəl/",m:"旅行する",e:"I love to travel to new places.",c:"日常生活"},
+  {w:"Music",p:"/ˈmjuːzɪk/",m:"音楽",e:"What kind of music do you like?",c:"日常生活"},
+  {w:"Movie",p:"/ˈmuːvi/",m:"映画",e:"Let's watch a movie tonight.",c:"日常生活"},
+  {w:"Sport",p:"/spɔːrt/",m:"スポーツ",e:"Do you play any sports?",c:"日常生活"},
+  {w:"Family",p:"/ˈfæməli/",m:"家族",e:"I have a close family.",c:"日常生活"},
+  {w:"Friend",p:"/frend/",m:"友達",e:"He's my best friend.",c:"日常生活"},
+  {w:"Neighbor",p:"/ˈneɪbər/",m:"隣人",e:"My neighbor is very friendly.",c:"日常生活"},
+  {w:"Apartment",p:"/əˈpɑːrtmənt/",m:"アパート",e:"I live in a small apartment.",c:"日常生活"},
+  {w:"Rent",p:"/rent/",m:"家賃・借りる",e:"My rent is $800 a month.",c:"日常生活"},
+  {w:"Commute",p:"/kəˈmjuːt/",m:"通勤する",e:"My commute takes about 40 minutes.",c:"日常生活"},
+  {w:"Routine",p:"/ruːˈtiːn/",m:"日課・ルーティン",e:"Exercise is part of my daily routine.",c:"日常生活"},
+  {w:"Celebrate",p:"/ˈselɪbreɪt/",m:"祝う・お祝いする",e:"Let's celebrate your birthday!",c:"日常生活"},
+  {w:"Invitation",p:"/ˌɪnvɪˈteɪʃən/",m:"招待",e:"Thank you for the invitation!",c:"日常生活"},
+  {w:"Party",p:"/ˈpɑːrti/",m:"パーティー",e:"Are you coming to the party?",c:"日常生活"},
+  {w:"Gift",p:"/ɡɪft/",m:"贈り物",e:"I brought you a small gift.",c:"日常生活"},
+  {w:"Borrow",p:"/ˈbɒroʊ/",m:"借りる",e:"Can I borrow your pen?",c:"日常生活"},
+  {w:"Lend",p:"/lend/",m:"貸す",e:"Could you lend me some money?",c:"日常生活"},
+  {w:"Busy",p:"/ˈbɪzi/",m:"忙しい",e:"I've been really busy lately.",c:"日常生活"},
+  {w:"Free",p:"/friː/",m:"暇な・無料の",e:"Are you free this evening?",c:"日常生活"},
+  {w:"Plan",p:"/plæn/",m:"計画・予定",e:"What are your plans for today?",c:"日常生活"},
+  {w:"Appointment",p:"/əˈpɔɪntmənt/",m:"約束・アポイントメント",e:"I have a dentist appointment at 3.",c:"日常生活"},
+  {w:"Phone call",p:"/foʊn kɔːl/",m:"電話",e:"I need to make a phone call.",c:"日常生活"},
+  {w:"Message",p:"/ˈmesɪdʒ/",m:"メッセージ",e:"Did you get my message?",c:"日常生活"},
+  {w:"Internet",p:"/ˈɪntərnet/",m:"インターネット",e:"Do you have access to the internet?",c:"日常生活"},
+  {w:"Social media",p:"/ˈsoʊʃəl ˈmiːdiə/",m:"SNS・ソーシャルメディア",e:"I spend too much time on social media.",c:"日常生活"},
+  {w:"Photo",p:"/ˈfoʊtoʊ/",m:"写真",e:"Can I take a photo of you?",c:"日常生活"},
+  {w:"Remember",p:"/rɪˈmembər/",m:"覚えている",e:"Do you remember meeting me before?",c:"日常生活"},
+  {w:"Forget",p:"/fərˈɡet/",m:"忘れる",e:"Don't forget to call me!",c:"日常生活"},
+  {w:"Lost",p:"/lɒst/",m:"迷子・なくした",e:"I'm lost. Can you help me?",c:"日常生活"},
+  {w:"Find",p:"/faɪnd/",m:"見つける",e:"Did you find your keys?",c:"日常生活"},
+  {w:"Help",p:"/help/",m:"助ける・手伝う",e:"Can you help me with this?",c:"日常生活"},
+  {w:"Understand",p:"/ˌʌndərˈstænd/",m:"理解する",e:"I don't understand. Could you repeat that?",c:"日常生活"},
+  {w:"Explain",p:"/ɪkˈspleɪn/",m:"説明する",e:"Could you explain that again?",c:"日常生活"},
+
+  // Emotions / Feelings (30)
+  {w:"Happy",p:"/ˈhæpi/",m:"嬉しい・幸せ",e:"I'm so happy to see you!",c:"感情"},
+  {w:"Sad",p:"/sæd/",m:"悲しい",e:"I feel sad when it rains.",c:"感情"},
+  {w:"Angry",p:"/ˈæŋɡri/",m:"怒っている",e:"He got angry at the bad news.",c:"感情"},
+  {w:"Excited",p:"/ɪkˈsaɪtɪd/",m:"興奮した・楽しみ",e:"I'm so excited about the trip!",c:"感情"},
+  {w:"Nervous",p:"/ˈnɜːrvəs/",m:"緊張している",e:"I feel nervous before presentations.",c:"感情"},
+  {w:"Surprised",p:"/sərˈpraɪzd/",m:"驚いた",e:"I was surprised by her reaction.",c:"感情"},
+  {w:"Scared",p:"/skerd/",m:"怖い・恐れている",e:"I'm scared of heights.",c:"感情"},
+  {w:"Embarrassed",p:"/ɪmˈbærəst/",m:"恥ずかしい",e:"I was embarrassed when I forgot her name.",c:"感情"},
+  {w:"Proud",p:"/praʊd/",m:"誇りに思う",e:"I'm proud of your achievements.",c:"感情"},
+  {w:"Jealous",p:"/ˈdʒeləs/",m:"嫉妬している",e:"Don't be jealous of others' success.",c:"感情"},
+  {w:"Lonely",p:"/ˈloʊnli/",m:"寂しい",e:"Living alone can feel lonely.",c:"感情"},
+  {w:"Confident",p:"/ˈkɒnfɪdənt/",m:"自信がある",e:"You should feel more confident.",c:"感情"},
+  {w:"Frustrated",p:"/frʌˈstreɪtɪd/",m:"イライラしている",e:"I feel frustrated when plans change.",c:"感情"},
+  {w:"Relieved",p:"/rɪˈliːvd/",m:"安心した",e:"I'm so relieved the exam is over.",c:"感情"},
+  {w:"Bored",p:"/bɔːrd/",m:"退屈している",e:"I'm bored. Let's do something fun.",c:"感情"},
+  {w:"Curious",p:"/ˈkjʊəriəs/",m:"好奇心旺盛な",e:"I'm curious about Japanese culture.",c:"感情"},
+  {w:"Grateful",p:"/ˈɡreɪtfəl/",m:"感謝している",e:"I'm so grateful for your support.",c:"感情"},
+  {w:"Hopeful",p:"/ˈhoʊpfəl/",m:"希望に満ちた",e:"I'm hopeful about the future.",c:"感情"},
+  {w:"Disappointed",p:"/ˌdɪsəˈpɔɪntɪd/",m:"がっかりした",e:"I was disappointed with the results.",c:"感情"},
+  {w:"Worried",p:"/ˈwɜːrid/",m:"心配している",e:"I'm worried about my parents.",c:"感情"},
+  {w:"Calm",p:"/kɑːm/",m:"穏やかな・落ち着いた",e:"Stay calm and breathe deeply.",c:"感情"},
+  {w:"Cheerful",p:"/ˈtʃɪrfəl/",m:"明るい・陽気な",e:"She's always cheerful and positive.",c:"感情"},
+  {w:"Upset",p:"/ʌpˈset/",m:"動揺した",e:"Don't get upset over small things.",c:"感情"},
+  {w:"Homesick",p:"/ˈhoʊmsɪk/",m:"ホームシック",e:"I get homesick when I travel.",c:"感情"},
+  {w:"Overwhelmed",p:"/ˌoʊvərˈwelmd/",m:"圧倒されている",e:"I feel overwhelmed by all the work.",c:"感情"},
+  {w:"Motivated",p:"/ˈmoʊtɪveɪtɪd/",m:"やる気がある",e:"I feel motivated to start the project.",c:"感情"},
+  {w:"Exhausted",p:"/ɪɡˈzɔːstɪd/",m:"ひどく疲れた",e:"I'm exhausted after the long trip.",c:"感情"},
+  {w:"Amazed",p:"/əˈmeɪzd/",m:"驚嘆した",e:"I was amazed by the view.",c:"感情"},
+  {w:"Embarrassing",p:"/ɪmˈbærəsɪŋ/",m:"恥ずかしい（状況）",e:"That was such an embarrassing moment.",c:"感情"},
+  {w:"Painful",p:"/ˈpeɪnfəl/",m:"つらい・痛い",e:"The breakup was very painful.",c:"感情"},
+
+  // Numbers / Time (30)
+  {w:"Now",p:"/naʊ/",m:"今",e:"I need to do it now.",c:"時間"},
+  {w:"Later",p:"/ˈleɪtər/",m:"後で",e:"I'll call you later.",c:"時間"},
+  {w:"Soon",p:"/suːn/",m:"もうすぐ",e:"I'll be there soon.",c:"時間"},
+  {w:"Already",p:"/ɔːlˈredi/",m:"もう・すでに",e:"I've already finished my homework.",c:"時間"},
+  {w:"Still",p:"/stɪl/",m:"まだ",e:"Is it still raining?",c:"時間"},
+  {w:"Yet",p:"/jet/",m:"まだ（疑問・否定）",e:"Have you eaten yet?",c:"時間"},
+  {w:"Always",p:"/ˈɔːlweɪz/",m:"いつも",e:"I always brush my teeth before bed.",c:"時間"},
+  {w:"Never",p:"/ˈnevər/",m:"決して〜ない",e:"I never eat fast food.",c:"時間"},
+  {w:"Sometimes",p:"/ˈsʌmtaɪmz/",m:"ときどき",e:"I sometimes go for a run.",c:"時間"},
+  {w:"Often",p:"/ˈɒfən/",m:"よく・しばしば",e:"I often visit my parents.",c:"時間"},
+  {w:"Rarely",p:"/ˈrerlɪ/",m:"めったに〜ない",e:"I rarely stay up past midnight.",c:"時間"},
+  {w:"Once",p:"/wʌns/",m:"一度",e:"I visited Paris once.",c:"時間"},
+  {w:"Twice",p:"/twaɪs/",m:"二度",e:"I've been there twice.",c:"時間"},
+  {w:"Daily",p:"/ˈdeɪli/",m:"毎日",e:"I take a vitamin daily.",c:"時間"},
+  {w:"Weekly",p:"/ˈwiːkli/",m:"毎週",e:"We have a weekly team meeting.",c:"時間"},
+  {w:"Monthly",p:"/ˈmʌnθli/",m:"毎月",e:"I pay my rent monthly.",c:"時間"},
+  {w:"Yesterday",p:"/ˈjestərdeɪ/",m:"昨日",e:"I met her yesterday.",c:"時間"},
+  {w:"Today",p:"/təˈdeɪ/",m:"今日",e:"What do you want to do today?",c:"時間"},
+  {w:"Tomorrow",p:"/təˈmɒroʊ/",m:"明日",e:"Let's meet tomorrow at noon.",c:"時間"},
+  {w:"Last week",p:"/læst wiːk/",m:"先週",e:"I went camping last week.",c:"時間"},
+  {w:"Next week",p:"/nekst wiːk/",m:"来週",e:"I'll start my new job next week.",c:"時間"},
+  {w:"A few days",p:"/ə fjuː deɪz/",m:"数日",e:"I'll be back in a few days.",c:"時間"},
+  {w:"Lately",p:"/ˈleɪtli/",m:"最近",e:"Have you been busy lately?",c:"時間"},
+  {w:"Recently",p:"/ˈriːsəntli/",m:"最近",e:"I recently moved to a new apartment.",c:"時間"},
+  {w:"Early",p:"/ˈɜːrli/",m:"早い・早く",e:"I arrived early for the meeting.",c:"時間"},
+  {w:"Late",p:"/leɪt/",m:"遅い・遅く",e:"Sorry, I'm running late.",c:"時間"},
+  {w:"On time",p:"/ɒn taɪm/",m:"時間通りに",e:"The train arrived on time.",c:"時間"},
+  {w:"In a hurry",p:"/ɪn ə ˈhʌri/",m:"急いでいる",e:"I'm in a hurry. Let's go!",c:"時間"},
+  {w:"Meanwhile",p:"/ˈmiːnwaɪl/",m:"その間",e:"Meanwhile, I'll prepare the documents.",c:"時間"},
+  {w:"Eventually",p:"/ɪˈventʃuəli/",m:"最終的に",e:"Everything will work out eventually.",c:"時間"},
+
+  // Miscellaneous (130 - to reach 500)
+  {w:"Beautiful",p:"/ˈbjuːtɪfəl/",m:"美しい",e:"What a beautiful sunset!",c:"その他"},
+  {w:"Interesting",p:"/ˈɪntrəstɪŋ/",m:"興味深い",e:"That's a very interesting idea.",c:"その他"},
+  {w:"Important",p:"/ɪmˈpɔːrtənt/",m:"重要な",e:"This meeting is very important.",c:"その他"},
+  {w:"Difficult",p:"/ˈdɪfɪkəlt/",m:"難しい",e:"This math problem is difficult.",c:"その他"},
+  {w:"Easy",p:"/ˈiːzi/",m:"簡単な",e:"The test was easier than I expected.",c:"その他"},
+  {w:"Possible",p:"/ˈpɒsɪbəl/",m:"可能な",e:"Is it possible to finish today?",c:"その他"},
+  {w:"Impossible",p:"/ɪmˈpɒsɪbəl/",m:"不可能な",e:"Nothing is impossible if you try.",c:"その他"},
+  {w:"Different",p:"/ˈdɪfrənt/",m:"異なる",e:"These two are very different.",c:"その他"},
+  {w:"Same",p:"/seɪm/",m:"同じ",e:"We're wearing the same shirt!",c:"その他"},
+  {w:"Special",p:"/ˈspeʃəl/",m:"特別な",e:"Today is a special occasion.",c:"その他"},
+  {w:"Simple",p:"/ˈsɪmpəl/",m:"シンプルな",e:"Keep it simple.",c:"その他"},
+  {w:"Perfect",p:"/ˈpɜːrfɪkt/",m:"完璧な",e:"The timing is perfect.",c:"その他"},
+  {w:"Ready",p:"/ˈredi/",m:"準備ができた",e:"Are you ready to go?",c:"その他"},
+  {w:"Careful",p:"/ˈkerfəl/",m:"注意深い",e:"Be careful when crossing the street.",c:"その他"},
+  {w:"Serious",p:"/ˈsɪəriəs/",m:"深刻な・真剣な",e:"This is a serious problem.",c:"その他"},
+  {w:"Funny",p:"/ˈfʌni/",m:"面白い・おかしい",e:"That joke was really funny!",c:"その他"},
+  {w:"Quiet",p:"/ˈkwaɪət/",m:"静かな",e:"Please keep quiet in the library.",c:"その他"},
+  {w:"Loud",p:"/laʊd/",m:"うるさい",e:"The music was too loud.",c:"その他"},
+  {w:"Clean",p:"/kliːn/",m:"清潔な・きれい",e:"Please keep the room clean.",c:"その他"},
+  {w:"Dirty",p:"/ˈdɜːrti/",m:"汚い",e:"My car is really dirty.",c:"その他"},
+  {w:"Full",p:"/fʊl/",m:"いっぱいの",e:"The train is completely full.",c:"その他"},
+  {w:"Empty",p:"/ˈempti/",m:"空の",e:"The bottle is empty.",c:"その他"},
+  {w:"Open",p:"/ˈoʊpən/",m:"開いている・開ける",e:"Is the store open on Sunday?",c:"その他"},
+  {w:"Closed",p:"/kloʊzd/",m:"閉まっている",e:"The library is closed today.",c:"その他"},
+  {w:"New",p:"/njuː/",m:"新しい",e:"I just got a new phone.",c:"その他"},
+  {w:"Old",p:"/oʊld/",m:"古い・年老いた",e:"This building is very old.",c:"その他"},
+  {w:"Big",p:"/bɪɡ/",m:"大きい",e:"We need a bigger table.",c:"その他"},
+  {w:"Small",p:"/smɔːl/",m:"小さい",e:"The apartment is a bit small.",c:"その他"},
+  {w:"Hot",p:"/hɒt/",m:"暑い・熱い",e:"It's very hot today.",c:"その他"},
+  {w:"Cold",p:"/koʊld/",m:"寒い・冷たい",e:"The weather is getting cold.",c:"その他"},
+  {w:"Warm",p:"/wɔːrm/",m:"暖かい",e:"This sweater is very warm.",c:"その他"},
+  {w:"Cool",p:"/kuːl/",m:"涼しい・かっこいい",e:"It's cool in the shade.",c:"その他"},
+  {w:"Fast",p:"/fæst/",m:"速い",e:"He's a very fast runner.",c:"その他"},
+  {w:"Slow",p:"/sloʊ/",m:"遅い",e:"This computer is too slow.",c:"その他"},
+  {w:"Long",p:"/lɒŋ/",m:"長い",e:"It's been a long day.",c:"その他"},
+  {w:"Short",p:"/ʃɔːrt/",m:"短い",e:"The meeting was short but productive.",c:"その他"},
+  {w:"High",p:"/haɪ/",m:"高い",e:"The mountain is very high.",c:"その他"},
+  {w:"Low",p:"/loʊ/",m:"低い",e:"Keep the volume low, please.",c:"その他"},
+  {w:"Right",p:"/raɪt/",m:"正しい・右",e:"You're absolutely right.",c:"その他"},
+  {w:"Wrong",p:"/rɒŋ/",m:"間違っている",e:"I think something is wrong.",c:"その他"},
+  {w:"True",p:"/truː/",m:"本当の",e:"Is it true that you're leaving?",c:"その他"},
+  {w:"False",p:"/fɔːls/",m:"偽の・間違った",e:"That information is false.",c:"その他"},
+  {w:"Real",p:"/riːl/",m:"本物の・現実の",e:"Is this a real diamond?",c:"その他"},
+  {w:"Fake",p:"/feɪk/",m:"偽物の",e:"Be careful of fake news.",c:"その他"},
+  {w:"Safe",p:"/seɪf/",m:"安全な",e:"Is it safe to walk here at night?",c:"その他"},
+  {w:"Dangerous",p:"/ˈdeɪndʒərəs/",m:"危険な",e:"Driving in the storm is dangerous.",c:"その他"},
+  {w:"Polite",p:"/pəˈlaɪt/",m:"礼儀正しい",e:"She's always very polite.",c:"その他"},
+  {w:"Rude",p:"/ruːd/",m:"失礼な",e:"It's rude to talk with your mouth full.",c:"その他"},
+  {w:"Kind",p:"/kaɪnd/",m:"親切な",e:"That's very kind of you.",c:"その他"},
+  {w:"Generous",p:"/ˈdʒenərəs/",m:"気前の良い",e:"He's very generous with his time.",c:"その他"},
+  {w:"Selfish",p:"/ˈselfɪʃ/",m:"わがままな・自己中心的な",e:"Don't be selfish. Share with others.",c:"その他"},
+  {w:"Honest",p:"/ˈɒnɪst/",m:"正直な",e:"Be honest with me.",c:"その他"},
+  {w:"Lie",p:"/laɪ/",m:"嘘をつく",e:"Don't lie to me.",c:"その他"},
+  {w:"Promise",p:"/ˈprɒmɪs/",m:"約束する",e:"I promise I'll be there.",c:"その他"},
+  {w:"Agree",p:"/əˈɡriː/",m:"同意する",e:"I completely agree with you.",c:"その他"},
+  {w:"Disagree",p:"/ˌdɪsəˈɡriː/",m:"反対する",e:"I'm afraid I disagree.",c:"その他"},
+  {w:"Suggest",p:"/səˈdʒest/",m:"提案する",e:"May I suggest an alternative?",c:"その他"},
+  {w:"Decide",p:"/dɪˈsaɪd/",m:"決める",e:"Have you decided what to order?",c:"その他"},
+  {w:"Choose",p:"/tʃuːz/",m:"選ぶ",e:"Choose whichever you like.",c:"その他"},
+  {w:"Try",p:"/traɪ/",m:"試みる・試す",e:"You should try the new restaurant.",c:"その他"},
+  {w:"Start",p:"/stɑːrt/",m:"始める",e:"Let's start the meeting.",c:"その他"},
+  {w:"Finish",p:"/ˈfɪnɪʃ/",m:"終わらせる",e:"Did you finish your homework?",c:"その他"},
+  {w:"Continue",p:"/kənˈtɪnjuː/",m:"続ける",e:"Please continue.",c:"その他"},
+  {w:"Stop",p:"/stɒp/",m:"止まる・やめる",e:"Stop talking and listen.",c:"その他"},
+  {w:"Change",p:"/tʃeɪndʒ/",m:"変わる・変える",e:"Things change over time.",c:"その他"},
+  {w:"Move",p:"/muːv/",m:"動く・引っ越す",e:"I'm planning to move to Tokyo.",c:"その他"},
+  {w:"Wait",p:"/weɪt/",m:"待つ",e:"Please wait a moment.",c:"その他"},
+  {w:"Come",p:"/kʌm/",m:"来る",e:"Can you come over tonight?",c:"その他"},
+  {w:"Go",p:"/ɡoʊ/",m:"行く",e:"I need to go to the supermarket.",c:"その他"},
+  {w:"Leave",p:"/liːv/",m:"出発する・去る",e:"What time do you leave for work?",c:"その他"},
+  {w:"Arrive",p:"/əˈraɪv/",m:"到着する",e:"What time will you arrive?",c:"その他"},
+  {w:"Meet",p:"/miːt/",m:"会う",e:"Nice to meet you!",c:"その他"},
+  {w:"Call",p:"/kɔːl/",m:"電話する・呼ぶ",e:"I'll call you when I arrive.",c:"その他"},
+  {w:"Talk",p:"/tɔːk/",m:"話す",e:"Can we talk later?",c:"その他"},
+  {w:"Listen",p:"/ˈlɪsən/",m:"聞く",e:"Please listen carefully.",c:"その他"},
+  {w:"Ask",p:"/æsk/",m:"質問する・頼む",e:"Don't be afraid to ask questions.",c:"その他"},
+  {w:"Answer",p:"/ˈænsər/",m:"答える・返事",e:"Please answer my question.",c:"その他"},
+  {w:"Know",p:"/noʊ/",m:"知っている",e:"Do you know the way to the station?",c:"その他"},
+  {w:"Think",p:"/θɪŋk/",m:"考える・思う",e:"I think it's a good idea.",c:"その他"},
+  {w:"Feel",p:"/fiːl/",m:"感じる",e:"How do you feel today?",c:"その他"},
+  {w:"Want",p:"/wɒnt/",m:"欲しい・したい",e:"What do you want to eat?",c:"その他"},
+  {w:"Need",p:"/niːd/",m:"必要とする",e:"I need some help.",c:"その他"},
+  {w:"Like",p:"/laɪk/",m:"好き",e:"I like Japanese food.",c:"その他"},
+  {w:"Love",p:"/lʌv/",m:"大好き・愛する",e:"I love traveling.",c:"その他"},
+  {w:"Hate",p:"/heɪt/",m:"嫌いだ",e:"I hate being late.",c:"その他"},
+  {w:"Miss",p:"/mɪs/",m:"恋しい・逃す",e:"I miss my family.",c:"その他"},
+  {w:"Hope",p:"/hoʊp/",m:"希望する・望む",e:"I hope everything goes well.",c:"その他"},
+  {w:"Wish",p:"/wɪʃ/",m:"願う",e:"I wish I could travel more.",c:"その他"},
+  {w:"Believe",p:"/bɪˈliːv/",m:"信じる",e:"I believe you can do it.",c:"その他"},
+  {w:"Trust",p:"/trʌst/",m:"信頼する",e:"I trust your judgment.",c:"その他"},
+  {w:"Support",p:"/səˈpɔːrt/",m:"支持する・サポート",e:"Thank you for your support.",c:"その他"},
+  {w:"Share",p:"/ʃer/",m:"共有する",e:"Let's share the food.",c:"その他"},
+  {w:"Show",p:"/ʃoʊ/",m:"見せる",e:"Can you show me the way?",c:"その他"},
+  {w:"Give",p:"/ɡɪv/",m:"与える",e:"Can you give me some advice?",c:"その他"},
+  {w:"Take",p:"/teɪk/",m:"取る・かかる",e:"How long does it take?",c:"その他"},
+  {w:"Make",p:"/meɪk/",m:"作る・する",e:"Let's make a plan.",c:"その他"},
+  {w:"Use",p:"/juːz/",m:"使う",e:"Can I use your phone?",c:"その他"},
+  {w:"Keep",p:"/kiːp/",m:"保つ・続ける",e:"Keep up the good work!",c:"その他"},
+  {w:"Put",p:"/pʊt/",m:"置く",e:"Where should I put this?",c:"その他"},
+  {w:"Get",p:"/ɡet/",m:"得る・なる",e:"I'll get you some water.",c:"その他"},
+  {w:"Have",p:"/hæv/",m:"持っている",e:"I have a question.",c:"その他"},
+  {w:"Look",p:"/lʊk/",m:"見る・見える",e:"Look at that beautiful view!",c:"その他"},
+  {w:"See",p:"/siː/",m:"見える・理解する",e:"I see what you mean.",c:"その他"},
+  {w:"Hear",p:"/hɪr/",m:"聞こえる",e:"Did you hear the news?",c:"その他"},
+  {w:"Read",p:"/riːd/",m:"読む",e:"Have you read this book?",c:"その他"},
+  {w:"Write",p:"/raɪt/",m:"書く",e:"Please write your name here.",c:"その他"},
+  {w:"Learn",p:"/lɜːrn/",m:"学ぶ",e:"I want to learn English.",c:"その他"},
+  {w:"Study",p:"/ˈstʌdi/",m:"勉強する",e:"I study English every day.",c:"その他"},
+  {w:"Teach",p:"/tiːtʃ/",m:"教える",e:"Can you teach me how to cook?",c:"その他"},
+  {w:"Practice",p:"/ˈpræktɪs/",m:"練習する",e:"Practice makes perfect.",c:"その他"},
+  {w:"Improve",p:"/ɪmˈpruːv/",m:"上達する・改善する",e:"I want to improve my English.",c:"その他"},
+  {w:"Succeed",p:"/səkˈsiːd/",m:"成功する",e:"I know you'll succeed.",c:"その他"},
+  {w:"Fail",p:"/feɪl/",m:"失敗する",e:"Don't be afraid to fail.",c:"その他"},
+  {w:"Try again",p:"/traɪ əˈɡen/",m:"もう一度試す",e:"Let's try again tomorrow.",c:"その他"},
+  {w:"Give up",p:"/ɡɪv ʌp/",m:"諦める",e:"Don't give up! You're almost there.",c:"その他"},
+  {w:"Keep going",p:"/kiːp ˈɡoʊɪŋ/",m:"続けて・頑張れ",e:"Keep going! You're doing great.",c:"その他"},
+  {w:"Do your best",p:"/duː jɔːr best/",m:"全力を尽くす",e:"Do your best and that's enough.",c:"その他"},
+  {w:"Make sense",p:"/meɪk sens/",m:"意味をなす・理解できる",e:"Does this make sense to you?",c:"その他"},
+  {w:"For example",p:"/fɔːr ɪɡˈzɑːmpəl/",m:"例えば",e:"For example, I love sushi.",c:"その他"},
+  {w:"In other words",p:"/ɪn ˈʌðər wɜːrdz/",m:"言い換えると",e:"In other words, we need more time.",c:"その他"},
+  {w:"By the way",p:"/baɪ ðə weɪ/",m:"ところで",e:"By the way, have you met John?",c:"その他"},
+  {w:"Actually",p:"/ˈæktʃuəli/",m:"実は・実際に",e:"Actually, I've been there before.",c:"その他"},
+  {w:"However",p:"/haʊˈevər/",m:"しかしながら",e:"However, there's a problem.",c:"その他"},
+  {w:"Therefore",p:"/ˈðerfɔːr/",m:"したがって",e:"Therefore, we need to act quickly.",c:"その他"},
+  {w:"Although",p:"/ɔːlˈðoʊ/",m:"〜だけれども",e:"Although it's difficult, I'll try.",c:"その他"},
+  {w:"Because",p:"/bɪˈkɒz/",m:"なぜなら",e:"I'm happy because I got the job.",c:"その他"},
+  {w:"If",p:"/ɪf/",m:"もし",e:"If it rains, let's stay inside.",c:"その他"},
+  {w:"Unless",p:"/ənˈles/",m:"〜しない限り",e:"Unless you hurry, we'll be late.",c:"その他"},
+  {w:"Perhaps",p:"/pərˈhæps/",m:"おそらく",e:"Perhaps we should leave earlier.",c:"その他"},
+  {w:"Probably",p:"/ˈprɒbəbli/",m:"たぶん",e:"It will probably rain tomorrow.",c:"その他"},
+  {w:"Definitely",p:"/ˈdefɪnɪtli/",m:"絶対に・確実に",e:"I'll definitely be there.",c:"その他"},
+  {w:"Somehow",p:"/ˈsʌmhaʊ/",m:"なんとかして",e:"We'll manage somehow.",c:"その他"},
+  {w:"Anyway",p:"/ˈeniweɪ/",m:"とにかく",e:"Anyway, let's move on.",c:"その他"},
+  {w:"Basically",p:"/ˈbeɪsɪkli/",m:"基本的に",e:"Basically, the plan is simple.",c:"その他"},
+  {w:"Literally",p:"/ˈlɪtərəli/",m:"文字通りに",e:"I literally have no idea.",c:"その他"},
+  {w:"Exactly",p:"/ɪɡˈzæktli/",m:"まさに・その通り",e:"Exactly! That's what I meant.",c:"その他"},
+  {w:"Almost",p:"/ˈɔːlmoʊst/",m:"ほとんど",e:"I've almost finished the project.",c:"その他"},
+  {w:"Enough",p:"/ɪˈnʌf/",m:"十分な",e:"I've had enough for today.",c:"その他"},
+  {w:"Instead",p:"/ɪnˈsted/",m:"代わりに",e:"Let's walk instead of taking a taxi.",c:"その他"},
+  {w:"Together",p:"/təˈɡeðər/",m:"一緒に",e:"Let's work on this together.",c:"その他"}
+];
+
+// ===== STATE =====
+let state = {
+  learned: {},
+  quizStats: {correct:0, wrong:0, total:0},
+  currentPage: 'home',
+  fc: {words:[], idx:0, category:'全て'},
+  quiz: {words:[], idx:0, correct:0, wrong:0, answered:false, category:'全て'}
+};
+
+function loadState() {
+  try {
+    const s = localStorage.getItem('evAppState');
+    if (s) {
+      const loaded = JSON.parse(s);
+      state.learned = loaded.learned || {};
+      state.quizStats = loaded.quizStats || {correct:0,wrong:0,total:0};
+    }
+  } catch(e){}
+}
+
+function saveState() {
+  localStorage.setItem('evAppState', JSON.stringify({
+    learned: state.learned,
+    quizStats: state.quizStats
+  }));
+}
+
+// ===== UTILS =====
+function getCategories() {
+  const cats = ['全て', ...new Set(VOCAB.map(v=>v.c))];
+  return cats;
+}
+
+function getWords(category) {
+  return category === '全て' ? VOCAB : VOCAB.filter(v=>v.c===category);
+}
+
+function shuffle(arr) {
+  const a=[...arr]; for(let i=a.length-1;i>0;i--){const j=Math.floor(Math.random()*(i+1));[a[i],a[j]]=[a[j],a[i]];} return a;
+}
+
+function showToast(msg) {
+  const t = document.getElementById('toast');
+  t.textContent = msg;
+  t.classList.add('show');
+  setTimeout(()=>t.classList.remove('show'), 2000);
+}
+
+// ===== NAV =====
+function showPage(page) {
+  document.querySelectorAll('[id^="page-"]').forEach(el=>el.style.display='none');
+  document.getElementById('page-'+page).style.display='block';
+  document.querySelectorAll('.tab-btn').forEach(b=>b.classList.remove('active'));
+  const tab = document.getElementById('tab-'+page);
+  if(tab) tab.classList.add('active');
+  document.getElementById('nav-back').style.display='none';
+  state.currentPage = page;
+  const titles = {home:'日常英会話 学習', flashcard:'フラッシュカード', quiz:'4択クイズ', progress:'学習進捗'};
+  document.getElementById('nav-title').textContent = titles[page]||'';
+  if(page==='home') updateHomeStats();
+  if(page==='flashcard') initFlashcard();
+  if(page==='quiz') initQuiz();
+  if(page==='progress') updateProgress();
+}
+
+function goBack() { showPage('home'); }
+
+// ===== HOME =====
+function updateHomeStats() {
+  const learnedCount = Object.values(state.learned).filter(v=>v).length;
+  document.getElementById('home-learned').textContent = learnedCount;
+  document.getElementById('home-total').textContent = VOCAB.length;
+  const {correct,total} = state.quizStats;
+  document.getElementById('home-accuracy').textContent = total > 0 ? Math.round(correct/total*100)+'%' : '-';
+}
+
+// ===== FLASHCARD =====
+function initFlashcard() {
+  const cats = getCategories();
+  const chips = document.getElementById('fc-chips');
+  chips.innerHTML = '';
+  cats.forEach(c=>{
+    const chip = document.createElement('button');
+    chip.className='chip'+(c===state.fc.category?' active':'');
+    chip.textContent=c;
+    chip.onclick=()=>{ state.fc.category=c; initFlashcard(); };
+    chips.appendChild(chip);
+  });
+  startFlashcard();
+}
+
+function startFlashcard() {
+  const words = shuffle(getWords(state.fc.category));
+  state.fc.words = words;
+  state.fc.idx = 0;
+  document.getElementById('flashcard-area').style.display='block';
+  showFlashcard();
+}
+
+function showFlashcard() {
+  const {words, idx} = state.fc;
+  if(idx >= words.length) {
+    showToast('🎉 このカテゴリ完了！');
+    state.fc.idx = 0;
+    showFlashcard();
+    return;
+  }
+  const w = words[idx];
+  document.getElementById('fc-word').textContent = w.w;
+  document.getElementById('fc-phonetic').textContent = w.p;
+  document.getElementById('fc-meaning').textContent = w.m;
+  document.getElementById('fc-example').textContent = w.e;
+  document.getElementById('fc-category-label').textContent = w.c;
+  document.getElementById('fc-counter').textContent = `${idx+1} / ${words.length}`;
+  document.getElementById('fc-progress').style.width = `${(idx/words.length)*100}%`;
+  const fc = document.getElementById('flashcard');
+  fc.classList.remove('flipped');
+}
+
+function flipCard() {
+  document.getElementById('flashcard').classList.toggle('flipped');
+}
+
+function markCard(learned) {
+  const w = state.fc.words[state.fc.idx];
+  if(learned) {
+    state.learned[w.w] = true;
+    showToast('✅ 覚えた！');
+  } else {
+    showToast('🔄 後でまた練習しよう');
+  }
+  saveState();
+  state.fc.idx++;
+  showFlashcard();
+}
+
+// ===== QUIZ =====
+function initQuiz() {
+  const cats = getCategories();
+  const chips = document.getElementById('quiz-chips');
+  chips.innerHTML = '';
+  cats.forEach(c=>{
+    const chip = document.createElement('button');
+    chip.className='chip'+(c===state.quiz.category?' active':'');
+    chip.textContent=c;
+    chip.onclick=()=>{ state.quiz.category=c; initQuiz(); };
+    chips.appendChild(chip);
+  });
+  document.getElementById('quiz-area').style.display='block';
+  document.getElementById('result-area').style.display='none';
+  startQuiz();
+}
+
+function startQuiz() {
+  const words = shuffle(getWords(state.quiz.category));
+  state.quiz.words = words.slice(0, Math.min(20, words.length));
+  state.quiz.idx = 0;
+  state.quiz.correct = 0;
+  state.quiz.wrong = 0;
+  document.getElementById('quiz-area').querySelector('.quiz-question').style.display='flex';
+  document.getElementById('quiz-area').querySelector('.quiz-question').style.flexDirection='column';
+  document.getElementById('result-area').style.display='none';
+  document.getElementById('quiz-options').style.display='grid';
+  document.querySelectorAll('.quiz-stats').forEach(el=>el.style.display='flex');
+  updateQuizStats();
+  showQuiz();
+}
+
+function showQuiz() {
+  const {words, idx} = state.quiz;
+  if(idx >= words.length) {
+    showQuizResult();
+    return;
+  }
+  const w = words[idx];
+  document.getElementById('quiz-word').textContent = w.w;
+  document.getElementById('quiz-phonetic').textContent = w.p;
+  document.getElementById('quiz-num').textContent = idx+1;
+  document.getElementById('quiz-total').textContent = words.length;
+  document.getElementById('quiz-progress').style.width = `${(idx/words.length)*100}%`;
+
+  // Generate options
+  const wrong = shuffle(VOCAB.filter(v=>v.m!==w.m)).slice(0,3);
+  const opts = shuffle([w, ...wrong]);
+  const container = document.getElementById('quiz-options');
+  container.innerHTML = '';
+  opts.forEach(o=>{
+    const btn = document.createElement('button');
+    btn.className='quiz-opt';
+    btn.textContent = o.m;
+    btn.onclick=()=>answerQuiz(btn, o.m===w.m, w.m, container);
+    container.appendChild(btn);
+  });
+  state.quiz.answered = false;
+}
+
+function answerQuiz(btn, correct, correctAns, container) {
+  if(state.quiz.answered) return;
+  state.quiz.answered = true;
+  if(correct) {
+    btn.classList.add('correct');
+    state.quiz.correct++;
+    state.quizStats.correct++;
+    showToast('✅ 正解！');
+    state.learned[state.quiz.words[state.quiz.idx].w] = true;
+  } else {
+    btn.classList.add('wrong');
+    state.quiz.wrong++;
+    showToast('❌ 不正解...');
+    // Show correct answer
+    container.querySelectorAll('.quiz-opt').forEach(b=>{
+      if(b.textContent===correctAns) b.classList.add('correct');
+    });
+  }
+  state.quizStats.total++;
+  container.querySelectorAll('.quiz-opt').forEach(b=>b.classList.add('disabled'));
+  saveState();
+  updateQuizStats();
+  setTimeout(()=>{ state.quiz.idx++; showQuiz(); }, 1200);
+}
+
+function updateQuizStats() {
+  document.getElementById('quiz-correct').textContent = state.quiz.correct;
+  document.getElementById('quiz-wrong').textContent = state.quiz.wrong;
+  const total = state.quiz.correct + state.quiz.wrong;
+  document.getElementById('quiz-acc').textContent = total>0 ? Math.round(state.quiz.correct/total*100)+'%' : '-%';
+}
+
+function showQuizResult() {
+  document.getElementById('quiz-options').style.display='none';
+  document.getElementById('quiz-area').querySelector('.quiz-question').style.display='none';
+  document.getElementById('result-area').style.display='block';
+  const total = state.quiz.words.length;
+  const score = state.quiz.correct;
+  document.getElementById('result-score').textContent = `${score} / ${total}`;
+  const icon = document.querySelector('.result-icon');
+  if(score/total >= 0.8) icon.textContent='🎉';
+  else if(score/total >= 0.5) icon.textContent='😊';
+  else icon.textContent='😅';
+}
+
+// ===== PROGRESS =====
+function updateProgress() {
+  const learnedWords = Object.entries(state.learned).filter(([,v])=>v).map(([k])=>k);
+  document.getElementById('prog-count').textContent = learnedWords.length;
+
+  // Category progress
+  const cats = getCategories().filter(c=>c!=='全て');
+  const catList = document.getElementById('cat-progress-list');
+  catList.innerHTML = '';
+  cats.forEach(c=>{
+    const total = VOCAB.filter(v=>v.c===c).length;
+    const done = VOCAB.filter(v=>v.c===c && state.learned[v.w]).length;
+    const pct = Math.round(done/total*100);
+    const div = document.createElement('div');
+    div.className='cat-progress';
+    div.innerHTML=`<div class="cat-progress-label"><span>${c}</span><span>${done}/${total} (${pct}%)</span></div><div class="progress-bar"><div class="progress-fill" style="width:${pct}%"></div></div>`;
+    catList.appendChild(div);
+  });
+
+  // Learned words grid
+  const grid = document.getElementById('learned-words');
+  grid.innerHTML = '';
+  if(learnedWords.length === 0) {
+    grid.innerHTML='<p style="color:var(--muted);font-size:14px">まだ覚えた単語はありません</p>';
+  } else {
+    learnedWords.forEach(w=>{
+      const vocab = VOCAB.find(v=>v.w===w);
+      if(!vocab) return;
+      const b = document.createElement('div');
+      b.className='word-badge';
+      b.textContent=`${w} - ${vocab.m}`;
+      grid.appendChild(b);
+    });
+  }
+}
+
+function resetProgress() {
+  if(confirm('全ての学習進捗をリセットしますか？')) {
+    state.learned = {};
+    state.quizStats = {correct:0,wrong:0,total:0};
+    saveState();
+    updateProgress();
+    showToast('リセットしました');
+  }
+}
+
+// ===== PWA MANIFEST =====
+function injectManifest() {
+  const manifest = {
+    name:"日常英会話 単語学習",
+    short_name:"英単語",
+    description:"日常英会話の単語を楽しく学ぼう",
+    start_url:"./",
+    display:"standalone",
+    background_color:"#F8FAFC",
+    theme_color:"#4F46E5",
+    orientation:"portrait",
+    icons:[
+      {src:"data:image/svg+xml,<svg xmlns='http://www.w3.org/2000/svg' viewBox='0 0 100 100'><rect width='100' height='100' rx='20' fill='%234F46E5'/><text y='.9em' font-size='80' x='10'>📖</text></svg>",sizes:"any",type:"image/svg+xml"}
+    ]
+  };
+  const blob = new Blob([JSON.stringify(manifest)], {type:'application/manifest+json'});
+  const url = URL.createObjectURL(blob);
+  const link = document.createElement('link');
+  link.rel='manifest'; link.href=url;
+  document.head.appendChild(link);
+  document.getElementById('manifest-placeholder').remove();
+}
+
+// ===== SERVICE WORKER =====
+function registerSW() {
+  if('serviceWorker' in navigator) {
+    const swCode = `
+const CACHE='ev-app-v1';
+const ASSETS=['./'];
+self.addEventListener('install',e=>e.waitUntil(caches.open(CACHE).then(c=>c.addAll(ASSETS))));
+self.addEventListener('fetch',e=>e.respondWith(caches.match(e.request).then(r=>r||fetch(e.request).then(res=>{const clone=res.clone();caches.open(CACHE).then(c=>c.put(e.request,clone));return res;}))));
+self.addEventListener('activate',e=>e.waitUntil(caches.keys().then(keys=>Promise.all(keys.filter(k=>k!==CACHE).map(k=>caches.delete(k))))));
+`;
+    const blob = new Blob([swCode], {type:'application/javascript'});
+    const url = URL.createObjectURL(blob);
+    navigator.serviceWorker.register(url).catch(()=>{});
+  }
+}
+
+// ===== INIT =====
+loadState();
+injectManifest();
+registerSW();
+showPage('home');
+</script>
+</body>
+</html>
