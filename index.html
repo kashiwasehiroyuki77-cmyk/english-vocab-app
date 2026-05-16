@@ -95,6 +95,11 @@ main{flex:1;padding:16px;padding-bottom:80px;max-width:600px;margin:0 auto;width
 #result-area{display:none;text-align:center;padding:24px}
 .result-icon{font-size:64px;margin-bottom:16px}
 .result-score{font-size:48px;font-weight:700;color:var(--primary)}
+/* LEVEL FILTER */
+.filter-label{font-size:11px;color:var(--muted);font-weight:600;text-transform:uppercase;letter-spacing:.5px;margin-bottom:6px;margin-top:4px}
+.chip-level{border-color:#F59E0B}
+.chip-level.active{border-color:#F59E0B;background:#F59E0B;color:#fff}
+.fc-level-badge{display:inline-block;background:rgba(255,255,255,.25);border-radius:6px;padding:2px 8px;font-size:11px;font-weight:700;margin-top:6px}
 /* TOAST */
 #toast{position:fixed;top:72px;left:50%;transform:translateX(-50%) translateY(-20px);background:#1E293B;color:#fff;padding:10px 20px;border-radius:24px;font-size:14px;opacity:0;transition:all .3s;z-index:200;white-space:nowrap;pointer-events:none}
 #toast.show{opacity:1;transform:translateX(-50%) translateY(0)}
@@ -131,6 +136,9 @@ main{flex:1;padding:16px;padding-bottom:80px;max-width:600px;margin:0 auto;width
 
     <!-- FLASHCARD PAGE -->
     <div id="page-flashcard" style="display:none">
+      <div class="filter-label">レベル</div>
+      <div class="chips" id="fc-level-chips"></div>
+      <div class="filter-label">カテゴリ</div>
       <div class="chips" id="fc-chips"></div>
       <div id="flashcard-area">
         <div class="fc-meta">
@@ -143,6 +151,7 @@ main{flex:1;padding:16px;padding-bottom:80px;max-width:600px;margin:0 auto;width
             <div class="fc-face fc-front">
               <div class="fc-word" id="fc-word"></div>
               <div class="fc-phonetic" id="fc-phonetic"></div>
+              <div class="fc-level-badge" id="fc-level-badge"></div>
               <div class="fc-hint">タップして意味を見る</div>
             </div>
             <div class="fc-face fc-back">
@@ -160,6 +169,9 @@ main{flex:1;padding:16px;padding-bottom:80px;max-width:600px;margin:0 auto;width
 
     <!-- QUIZ PAGE -->
     <div id="page-quiz" style="display:none">
+      <div class="filter-label">レベル</div>
+      <div class="chips" id="quiz-level-chips"></div>
+      <div class="filter-label">カテゴリ</div>
       <div class="chips" id="quiz-chips"></div>
       <div id="quiz-area">
         <div class="quiz-stats">
@@ -753,13 +765,67 @@ const VOCAB = [
   {w:"Together",p:"/təˈɡeðər/",m:"一緒に",e:"Let's work on this together.",c:"その他"}
 ];
 
+// ===== LEVEL MAP =====
+// Words not listed here default to level 2
+const WORD_LEVELS = {
+  // ---- LEVEL 1 ----
+  'Hello':1,'Hi':1,'Good morning':1,'Good afternoon':1,'Good evening':1,'Good night':1,
+  'Goodbye':1,'See you later':1,'How are you?':1,"I'm fine":1,'Nice to meet you':1,
+  'Welcome':1,'Thank you':1,"You're welcome":1,'Please':1,'Sorry':1,'Excuse me':1,
+  'Bye':1,'No problem':1,
+  'How much?':1,'Price':1,'Cash':1,'Size':1,'Color':1,'Cheap':1,'Expensive':1,'Sale':1,'Total':1,
+  'Menu':1,'Order':1,'Table':1,'Bill':1,'Tip':1,'Delicious':1,'Spicy':1,'Fresh':1,
+  'To go':1,'Hungry':1,'Thirsty':1,'Sweet':1,'Bitter':1,'Sour':1,
+  'Train':1,'Bus':1,'Taxi':1,'Airport':1,'Ticket':1,'Walk':1,'Directions':1,'Map':1,
+  'Turn left':1,'Turn right':1,'Straight ahead':1,'Near':1,'Far':1,'Subway':1,
+  'Hotel':1,'Wi-Fi':1,'Pool':1,'Key card':1,'Floor':1,'Elevator':1,
+  'Doctor':1,'Hospital':1,'Fever':1,'Headache':1,'Pain':1,'Tired':1,'Sleep':1,
+  'Weather':1,'Morning':1,'Evening':1,'Weekend':1,'Family':1,'Friend':1,
+  'Busy':1,'Free':1,'Phone call':1,'Message':1,'Internet':1,'Photo':1,
+  'Remember':1,'Forget':1,'Lost':1,'Find':1,'Help':1,'Understand':1,'Explain':1,
+  'Happy':1,'Sad':1,'Angry':1,'Excited':1,'Nervous':1,'Surprised':1,
+  'Scared':1,'Proud':1,'Worried':1,'Calm':1,
+  'Now':1,'Later':1,'Soon':1,'Already':1,'Still':1,'Yet':1,
+  'Always':1,'Never':1,'Sometimes':1,'Often':1,
+  'Yesterday':1,'Today':1,'Tomorrow':1,'Early':1,'Late':1,'On time':1,
+  'Daily':1,'Weekly':1,'Monthly':1,
+  'Beautiful':1,'Easy':1,'Same':1,'New':1,'Old':1,'Big':1,'Small':1,
+  'Hot':1,'Cold':1,'Warm':1,'Fast':1,'Slow':1,'Long':1,'Short':1,
+  'High':1,'Low':1,'Right':1,'Wrong':1,'Clean':1,'Dirty':1,
+  'Full':1,'Empty':1,'Open':1,'Closed':1,'Kind':1,
+  'Start':1,'Stop':1,'Wait':1,'Come':1,'Go':1,'Meet':1,'Call':1,
+  'Talk':1,'Listen':1,'Ask':1,'Answer':1,'Know':1,'Think':1,'Feel':1,
+  'Want':1,'Need':1,'Like':1,'Love':1,'Give':1,'Take':1,'Make':1,
+  'Get':1,'Have':1,'Look':1,'See':1,'Hear':1,'Read':1,'Write':1,'If':1,
+  // ---- LEVEL 3 ----
+  'Indeed':3,'Certainly':3,'Wonderful':3,'Absolutely':3,
+  'Warranty':3,'Label':3,'Brand':3,'Quality':3,'Aisle':3,'Coupon':3,
+  'Gift wrap':3,'Member':3,'Point':3,
+  'Ingredients':3,'Gluten-free':3,'Buffet':3,
+  'Ferry':3,
+  'Amenities':3,'Laundry':3,'Concierge':3,'Complain':3,'Upgrade':3,
+  'Surgery':3,'Nausea':3,'Blood pressure':3,
+  'Negotiate':3,'Strategy':3,'Efficient':3,'Productive':3,'Leadership':3,
+  'Collaboration':3,'Innovation':3,'Experience':3,'Skill':3,
+  'Priority':3,'Workload':3,'Permission':3,'Approve':3,'Retire':3,
+  'Invitation':3,
+  'Overwhelmed':3,'Motivated':3,'Exhausted':3,'Painful':3,
+  'Improve':3,'Succeed':3,'Make sense':3,'In other words':3,
+  'However':3,'Therefore':3,'Although':3,'Unless':3,
+  'Somehow':3,'Basically':3,'Literally':3,'Instead':3
+};
+
+function getWordLevel(word) {
+  return WORD_LEVELS[word.w] || 2;
+}
+
 // ===== STATE =====
 let state = {
   learned: {},
   quizStats: {correct:0, wrong:0, total:0},
   currentPage: 'home',
-  fc: {words:[], idx:0, category:'全て'},
-  quiz: {words:[], idx:0, correct:0, wrong:0, answered:false, category:'全て'}
+  fc: {words:[], idx:0, category:'全て', level:'全て'},
+  quiz: {words:[], idx:0, correct:0, wrong:0, answered:false, category:'全て', level:'全て'}
 };
 
 function loadState() {
@@ -781,13 +847,17 @@ function saveState() {
 }
 
 // ===== UTILS =====
-function getCategories() {
-  const cats = ['全て', ...new Set(VOCAB.map(v=>v.c))];
-  return cats;
+function getCategories(level) {
+  const pool = (level && level !== '全て')
+    ? VOCAB.filter(v => getWordLevel(v) === parseInt(level))
+    : VOCAB;
+  return ['全て', ...new Set(pool.map(v=>v.c))];
 }
 
-function getWords(category) {
-  return category === '全て' ? VOCAB : VOCAB.filter(v=>v.c===category);
+function getWords(category, level) {
+  let words = category === '全て' ? VOCAB : VOCAB.filter(v=>v.c===category);
+  if (level && level !== '全て') words = words.filter(v => getWordLevel(v) === parseInt(level));
+  return words;
 }
 
 function shuffle(arr) {
@@ -831,7 +901,18 @@ function updateHomeStats() {
 
 // ===== FLASHCARD =====
 function initFlashcard() {
-  const cats = getCategories();
+  // Level chips
+  const levelChips = document.getElementById('fc-level-chips');
+  levelChips.innerHTML = '';
+  ['全て','1','2','3'].forEach(l=>{
+    const chip = document.createElement('button');
+    chip.className='chip chip-level'+(l===state.fc.level?' active':'');
+    chip.textContent = l==='全て' ? '全て' : 'Lv'+l;
+    chip.onclick=()=>{ state.fc.level=l; state.fc.category='全て'; initFlashcard(); };
+    levelChips.appendChild(chip);
+  });
+  // Category chips
+  const cats = getCategories(state.fc.level);
   const chips = document.getElementById('fc-chips');
   chips.innerHTML = '';
   cats.forEach(c=>{
@@ -845,7 +926,12 @@ function initFlashcard() {
 }
 
 function startFlashcard() {
-  const words = shuffle(getWords(state.fc.category));
+  const words = shuffle(getWords(state.fc.category, state.fc.level));
+  if (words.length === 0) {
+    document.getElementById('flashcard-area').style.display='none';
+    showToast('この条件の単語はありません');
+    return;
+  }
   state.fc.words = words;
   state.fc.idx = 0;
   document.getElementById('flashcard-area').style.display='block';
@@ -866,6 +952,7 @@ function showFlashcard() {
   document.getElementById('fc-meaning').textContent = w.m;
   document.getElementById('fc-example').textContent = w.e;
   document.getElementById('fc-category-label').textContent = w.c;
+  document.getElementById('fc-level-badge').textContent = 'Lv' + getWordLevel(w);
   document.getElementById('fc-counter').textContent = `${idx+1} / ${words.length}`;
   document.getElementById('fc-progress').style.width = `${(idx/words.length)*100}%`;
   const fc = document.getElementById('flashcard');
@@ -891,7 +978,18 @@ function markCard(learned) {
 
 // ===== QUIZ =====
 function initQuiz() {
-  const cats = getCategories();
+  // Level chips
+  const levelChips = document.getElementById('quiz-level-chips');
+  levelChips.innerHTML = '';
+  ['全て','1','2','3'].forEach(l=>{
+    const chip = document.createElement('button');
+    chip.className='chip chip-level'+(l===state.quiz.level?' active':'');
+    chip.textContent = l==='全て' ? '全て' : 'Lv'+l;
+    chip.onclick=()=>{ state.quiz.level=l; state.quiz.category='全て'; initQuiz(); };
+    levelChips.appendChild(chip);
+  });
+  // Category chips
+  const cats = getCategories(state.quiz.level);
   const chips = document.getElementById('quiz-chips');
   chips.innerHTML = '';
   cats.forEach(c=>{
@@ -907,7 +1005,7 @@ function initQuiz() {
 }
 
 function startQuiz() {
-  const words = shuffle(getWords(state.quiz.category));
+  const words = shuffle(getWords(state.quiz.category, state.quiz.level));
   state.quiz.words = words.slice(0, Math.min(20, words.length));
   state.quiz.idx = 0;
   state.quiz.correct = 0;
